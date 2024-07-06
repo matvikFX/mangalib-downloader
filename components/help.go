@@ -26,6 +26,7 @@ func newHelpPage() *HelpPage {
 	text := "Сочетания клавиш\n" +
 		"-------------------------\n\n" +
 		"Универсальные\n" +
+		fmt.Sprintf(textFormat, "Escape", "Закрыть окно") +
 		fmt.Sprintf(textFormat, "Ctrl + O", "Помощь") +
 		fmt.Sprintf(textFormat, "Ctrl + S", "Поиск") +
 		"\nСтраницы Манги\n" +

@@ -5,7 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"mangalib-downlaoder/logger"
 )
+
+var Logger = logger.Logger{}
 
 type MangaLibClient struct {
 	client *http.Client

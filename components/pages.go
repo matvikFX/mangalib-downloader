@@ -66,24 +66,26 @@ func (p *MangaPage) setHandlers(cancel context.CancelFunc) {
 			cancel()
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
 		case tcell.KeyCtrlD: // Скачивание выделенных
-			func() {}()
-			// core.App.Client.DownloadSelected(p.selected)
+			p.downloadSelected(p.selected)
 		case tcell.KeyCtrlA: // Скачивание всех глав
-			// core.App.Client.DownloadManga(p.manga)
+			core.App.Client.DownloadManga(p.manga)
 		}
 		return event
 	})
 
+	// Выбор глав для скачивания
 	p.table.SetSelectedFunc(func(row, _ int) {
-		chapRef := p.table.GetCell(row, 0).GetReference()
-		if chapRef == nil {
-			return
+		cell := p.table.GetCell(row, 0)
+		if p.selected[row] {
+			cell.SetBackgroundColor(tcell.ColorBlack).
+				SetTextColor(tcell.ColorWhite)
+			p.selected[row] = false
+		} else {
+			cell.SetBackgroundColor(tcell.ColorWhite).
+				SetTextColor(tcell.ColorBlack)
+			p.selected[row] = true
 		}
-
-		// Выбор главы для скачивания
-		// if ch, ok := chapRef.(*models.Chapter); ok {
-		// 	selected[ch] = struct{}
-		// }
+		p.table.SetCell(row, 0, cell)
 	})
 }
 

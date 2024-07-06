@@ -10,7 +10,7 @@ import (
 
 // teams необязательно указывать
 func (c *MangaLibClient) CreateChapterPath(teams, mangaName string, volume, number, chapName string) string {
-	downloadsPath := filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader")
+	downloadsPath := filepath.Join(os.Getenv("HOME"), "MangaDownloader")
 
 	teams = removeChars(teams)
 	chapName = removeChars(chapName)
@@ -48,7 +48,7 @@ func (c *MangaLibClient) createFolder(rusName, branchTeams, volume, number, name
 
 	chapPath := c.CreateChapterPath(branchTeams, rusName, volume, number, name)
 
-	if err := os.MkdirAll(chapPath, os.ModeDir); err != nil {
+	if err := os.MkdirAll(chapPath, 0o755); err != nil {
 		return err
 	}
 

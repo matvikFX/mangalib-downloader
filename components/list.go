@@ -107,6 +107,7 @@ func (p *ListPage) setListTable() {
 	if data.Meta.From == 0 {
 		// Вывести модалку
 		Logger.WriteLog("манга не найдена")
+		core.App.Client.Query = ""
 		go p.setListTable()
 	}
 

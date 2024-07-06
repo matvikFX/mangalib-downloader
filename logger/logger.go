@@ -14,7 +14,7 @@ var logPath = filepath.Join(os.Getenv("HOME"), "MangaDownloader", "Logs")
 func (l *Logger) WriteLog(text string) {
 	localTime := time.Now().Local()
 
-	err := os.MkdirAll(logPath, os.ModeDir)
+	err := os.MkdirAll(logPath, 0o755)
 	if err != nil {
 		fmt.Println("Error creating log folder: ", err)
 	}

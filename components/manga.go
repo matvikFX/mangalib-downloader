@@ -14,7 +14,7 @@ import (
 type MangaPage struct {
 	manga *models.MangaInfo
 
-	selected map[int]*models.Chapter
+	selected map[int]bool
 
 	gird     *tview.Grid
 	textView *tview.TextView
@@ -52,6 +52,7 @@ func newMangaPage(manga *models.MangaInfo) *MangaPage {
 		textView: textView,
 		table:    table,
 
+		selected: make(map[int]bool),
 		cWrap: &utils.ContextWrapper{
 			Context: ctx,
 			Cancel:  cancel,
@@ -112,7 +113,7 @@ func (p *MangaPage) setChapters() {
 
 	core.App.TView.QueueUpdateDraw(func() {
 		loading := tview.NewTableCell("Загрузка...").SetSelectable(false)
-		p.table.SetCell(1, 1, loading)
+		p.table.SetCell(1, 2, loading)
 		p.table.SetTitle("Загрузка глав...")
 	})
 
@@ -129,9 +130,8 @@ func (p *MangaPage) setChapters() {
 
 	if len(chaps) == 0 {
 		core.App.TView.QueueUpdateDraw(func() {
-			// noRes := tview.NewTableCell("Не удалось найти ни одну главу").SetSelectable(false)
-			// p.table.SetCell(1, 1, noRes)
-			p.table.SetTitle("Не удалось найти ни одну главу")
+			noRes := tview.NewTableCell("Не удалось найти ни одну главу").SetSelectable(false)
+			p.table.SetCell(1, 2, noRes)
 		})
 		return
 	}
@@ -170,4 +170,23 @@ func (p *MangaPage) setChapters() {
 		p.table.Select(1, 0)
 		p.table.ScrollToBeginning()
 	})
+}
+
+func (p *MangaPage) downloadSelected(selectList map[int]bool) {
+	var chaps models.ChapterList
+	for row, selected := range selectList {
+		if !selected {
+			continue
+		}
+
+		chapRef := p.table.GetCell(row, 0).GetReference()
+		chap, ok := chapRef.(*models.Chapter)
+		if !ok {
+			Logger.WriteLog("Не получается привести к типу Chapter")
+			return
+		}
+		chaps = append(chaps, chap)
+	}
+
+	core.App.Client.DownloadChapters(p.manga.Slug, p.manga.RusName, chaps)
 }
