@@ -36,7 +36,7 @@ func newSearchModal() *SearchModal {
 
 func newForm() *tview.Form {
 	form := tview.NewForm()
-	form.AddInputField("Называние", "", 87, nil, nil).
+	form.AddInputField("Название", "", 87, nil, nil).
 		SetTitle("Поиск по названию").SetBorder(true)
 
 	return form

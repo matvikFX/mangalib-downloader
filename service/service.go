@@ -11,7 +11,7 @@ func Start() {
 	core.App = core.NewApp()
 	core.App.Init()
 
-	components.ShowSearchModal()
+	components.ShowListPage()
 	components.SetHandlers()
 
 	log.Println("Starting app")

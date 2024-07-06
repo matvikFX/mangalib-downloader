@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"fmt"
 
 	"mangalib-downlaoder/components/utils"
 	"mangalib-downlaoder/core"
@@ -13,20 +14,20 @@ import (
 type MangaPage struct {
 	manga *models.MangaInfo
 
-	selected map[int]bool
+	selected map[int]*models.Chapter
 
-	Grid     *tview.Grid
-	TextView *tview.TextView
-	Table    *tview.Table
+	gird     *tview.Grid
+	textView *tview.TextView
+	table    *tview.Table
 
-	ctxWrap *utils.ContextWrapper
+	cWrap *utils.ContextWrapper
 }
 
 func ShowMangaPage(manga *models.MangaInfo) {
 	mangaPage := newMangaPage(manga)
 
-	core.App.TView.SetFocus(mangaPage.Grid)
-	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.Grid, true)
+	core.App.TView.SetFocus(mangaPage.gird)
+	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.gird, true)
 }
 
 func newMangaPage(manga *models.MangaInfo) *MangaPage {
@@ -34,7 +35,7 @@ func newMangaPage(manga *models.MangaInfo) *MangaPage {
 	textView.SetWrap(true).SetWordWrap(true).
 		SetTitle("Информация").SetBorder(true)
 
-	table := newTable()
+	table := newInfoTable()
 
 	grid := tview.NewGrid()
 	grid.SetRows(-1).SetColumns(-1, -1, -1, -1, -1, -1, -1, -1, -1).
@@ -47,38 +48,38 @@ func newMangaPage(manga *models.MangaInfo) *MangaPage {
 	mangaPage := &MangaPage{
 		manga: manga,
 
-		Grid:     grid,
-		TextView: textView,
-		Table:    table,
+		gird:     grid,
+		textView: textView,
+		table:    table,
 
-		ctxWrap: &utils.ContextWrapper{
+		cWrap: &utils.ContextWrapper{
 			Context: ctx,
 			Cancel:  cancel,
 		},
 	}
 
 	go mangaPage.setMangaInfo()
+	go mangaPage.setChapters()
 
 	return mangaPage
 }
 
-func newTable() *tview.Table {
+func newInfoTable() *tview.Table {
 	table := tview.NewTable()
 
 	vol := tview.NewTableCell("Том").
 		SetMaxWidth(3).
 		SetAlign(tview.AlignCenter).
 		SetSelectable(false)
-	num := tview.NewTableCell("Том").
-		SetMaxWidth(3).
+	num := tview.NewTableCell("Номер").
+		SetMaxWidth(5).
 		SetAlign(tview.AlignCenter).
 		SetSelectable(false)
-	name := tview.NewTableCell("Том").
-		SetMaxWidth(3).
+	name := tview.NewTableCell("Название").
+		SetMaxWidth(40).
 		SetAlign(tview.AlignCenter).
 		SetSelectable(false)
-	downloadStatus := tview.NewTableCell("Том").
-		SetMaxWidth(3).
+	downloadStatus := tview.NewTableCell("Состояние загрузки").
 		SetAlign(tview.AlignCenter).
 		SetSelectable(false)
 
@@ -86,7 +87,7 @@ func newTable() *tview.Table {
 		SetCell(0, 1, num).
 		SetCell(0, 2, name).
 		SetCell(0, 3, downloadStatus).
-		SetFixed(0, 1)
+		SetFixed(1, 0)
 
 	table.SetSelectable(true, false).
 		SetSeparator('|').
@@ -100,6 +101,73 @@ func (p *MangaPage) setMangaInfo() {
 	info := utils.InfoText(p.manga)
 
 	core.App.TView.QueueUpdateDraw(func() {
-		p.TextView.SetText(info)
+		p.textView.SetText(info)
+	})
+}
+
+func (p *MangaPage) setChapters() {
+	ctx, cancel := p.cWrap.ResetContext()
+	defer cancel()
+	p.setHandlers(cancel)
+
+	core.App.TView.QueueUpdateDraw(func() {
+		loading := tview.NewTableCell("Загрузка...").SetSelectable(false)
+		p.table.SetCell(1, 1, loading)
+		p.table.SetTitle("Загрузка глав...")
+	})
+
+	if p.cWrap.ToCancel(ctx) {
+		Logger.WriteLog(ctx.Err().Error())
+		return
+	}
+
+	chaps, err := core.App.Client.GetChapters(ctx, p.manga.Slug)
+	if err != nil {
+		Logger.WriteLog(err.Error())
+		return
+	}
+
+	if len(chaps) == 0 {
+		core.App.TView.QueueUpdateDraw(func() {
+			// noRes := tview.NewTableCell("Не удалось найти ни одну главу").SetSelectable(false)
+			// p.table.SetCell(1, 1, noRes)
+			p.table.SetTitle("Не удалось найти ни одну главу")
+		})
+		return
+	}
+
+	p.table.SetTitle("Главы")
+	for idx, ch := range chaps {
+		if p.cWrap.ToCancel(ctx) {
+			Logger.WriteLog(ctx.Err().Error())
+			return
+		}
+
+		vol := tview.NewTableCell(
+			fmt.Sprintf("%-3s", ch.Volume)).
+			SetMaxWidth(5).SetReference(ch)
+		num := tview.NewTableCell(
+			fmt.Sprintf("%-5s", ch.Number)).
+			SetMaxWidth(5).SetReference(ch)
+		name := tview.NewTableCell(
+			fmt.Sprintf("%-40s", ch.Name)).
+			SetMaxWidth(40).SetReference(ch)
+
+		var downloadStatus string
+		chapPath := core.App.Client.CreateChapterPath("", p.manga.RusName, ch.Volume, ch.Number, ch.Name)
+		if core.App.Client.CheckExistence(chapPath) {
+			downloadStatus = "X"
+		}
+		download := tview.NewTableCell(downloadStatus)
+
+		p.table.SetCell(idx+1, 0, vol)
+		p.table.SetCell(idx+1, 1, num)
+		p.table.SetCell(idx+1, 2, name)
+		p.table.SetCell(idx+1, 3, download)
+	}
+
+	core.App.TView.QueueUpdateDraw(func() {
+		p.table.Select(1, 0)
+		p.table.ScrollToBeginning()
 	})
 }

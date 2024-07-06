@@ -5,10 +5,13 @@ import (
 
 	"mangalib-downlaoder/components/utils"
 	"mangalib-downlaoder/core"
+	"mangalib-downlaoder/logger"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
+
+var Logger = logger.Logger{}
 
 func SetHandlers() {
 	core.App.TView.EnableMouse(true)
@@ -25,22 +28,54 @@ func SetHandlers() {
 	})
 }
 
+func (p *ListPage) setHandlers(cancel context.CancelFunc) {
+	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		reload := func() {
+			cancel()
+			go p.setListTable()
+		}
+
+		switch event.Key() {
+		case tcell.KeyEscape: // Обнулить поисковую строку
+			if core.App.Client.Query != "" {
+				core.App.Client.Query = ""
+				reload()
+			}
+		case tcell.KeyCtrlF: // Предыдущая страница
+			core.App.Client.Page++
+			reload()
+
+		case tcell.KeyCtrlB: // Следующая страница
+			if core.App.Client.Page == 1 {
+				// Показать модалку, что ниже 1 пойти нельзя
+				break
+			}
+			core.App.Client.Page--
+			reload()
+		}
+		return event
+	})
+
+	p.table.SetSelectedFunc(p.setSelected)
+}
+
 func (p *MangaPage) setHandlers(cancel context.CancelFunc) {
-	p.Grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	p.gird.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
 			cancel()
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
 		case tcell.KeyCtrlD: // Скачивание выделенных
 			func() {}()
+			// core.App.Client.DownloadSelected(p.selected)
 		case tcell.KeyCtrlA: // Скачивание всех глав
 			// core.App.Client.DownloadManga(p.manga)
 		}
 		return event
 	})
 
-	p.Table.SetSelectedFunc(func(row, _ int) {
-		chapRef := p.Table.GetCell(row, 0).GetReference()
+	p.table.SetSelectedFunc(func(row, _ int) {
+		chapRef := p.table.GetCell(row, 0).GetReference()
 		if chapRef == nil {
 			return
 		}
@@ -64,6 +99,8 @@ func (p *SearchModal) setHandlers() {
 
 			searchInput.SetText("")
 			core.App.PageHolder.RemovePage(utils.SearchModalID)
+
+			ShowListPage()
 		}
 		return event
 	})

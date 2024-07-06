@@ -13,7 +13,7 @@ func (c *ContextWrapper) ResetContext() (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func ToCancel(ctx context.Context) bool {
+func (c *ContextWrapper) ToCancel(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():
 		return true

@@ -235,7 +235,7 @@ func (c *MangaLibClient) DownloadManga(manga *models.MangaInfo) {
 
 	wg := &sync.WaitGroup{}
 	for _, ch := range chapters {
-		manga.RusName = c.removeChars(manga.RusName)
+		manga.RusName = removeChars(manga.RusName)
 		chapPath := c.CreateChapterPath(branchTeams, manga.RusName, ch.Volume, ch.Number, ch.Name)
 		if err = os.MkdirAll(chapPath, os.ModeDir); err != nil {
 			Logger.WriteLog(err.Error())
@@ -266,7 +266,7 @@ func (c *MangaLibClient) DownloadChapter(slug string, branch int, volume, number
 	wg := &sync.WaitGroup{}
 	for _, p := range chapter.Pages {
 		// Создание имени страницы
-		pageName := c.createPageName(p.Slug, p.Image)
+		pageName := createPageName(p.Slug, p.Image)
 
 		// Если файл скачан, пропускаем
 		// if c.CheckExistence(chapPath, pageName) {
@@ -274,7 +274,7 @@ func (c *MangaLibClient) DownloadChapter(slug string, branch int, volume, number
 		// }
 
 		// Создание пути для страницы
-		pagePath := c.createPagePath(chapPath, pageName)
+		pagePath := createPagePath(chapPath, pageName)
 		// Если файл скачан, пропускаем
 		if _, err := os.Stat(pagePath); !os.IsNotExist(err) {
 			continue
@@ -306,7 +306,7 @@ func (c *MangaLibClient) downloadPage(pagePath, pageURL string) {
 		Logger.WriteLog(err.Error())
 	}
 
-	if err = c.createFile(body, pagePath); err != nil {
+	if err = createFile(body, pagePath); err != nil {
 		fmt.Println("Error creating file")
 		Logger.WriteLog(err.Error())
 	}

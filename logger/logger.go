@@ -9,7 +9,7 @@ import (
 
 type Logger struct{}
 
-var logPath = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader", "Logs")
+var logPath = filepath.Join(os.Getenv("HOME"), "MangaDownloader", "Logs")
 
 func (l *Logger) WriteLog(text string) {
 	localTime := time.Now().Local()
