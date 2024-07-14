@@ -3,8 +3,8 @@ package components
 import (
 	"fmt"
 
-	"mangalib-downlaoder/components/utils"
-	"mangalib-downlaoder/core"
+	"mangalib-downloader/components/utils"
+	"mangalib-downloader/core"
 
 	"github.com/rivo/tview"
 )
@@ -27,10 +27,12 @@ func newHelpPage() *HelpPage {
 		"-------------------------\n\n" +
 		"Универсальные\n" +
 		fmt.Sprintf(textFormat, "Escape", "Закрыть окно") +
+		fmt.Sprintf(textFormat, "Ctrl + C", "Закрыть программу") +
 		fmt.Sprintf(textFormat, "Ctrl + O", "Помощь") +
 		fmt.Sprintf(textFormat, "Ctrl + S", "Поиск") +
 		"\nСтраницы Манги\n" +
 		fmt.Sprintf(textFormat, "Enter", "Выбрать главу") +
+		fmt.Sprintf(textFormat, "Ctrl + P", "Выбор ветки перевода") +
 		fmt.Sprintf(textFormat, "Ctrl + D", "Скачать выбранные главы") +
 		fmt.Sprintf(textFormat, "Ctrl + A", "Скачать все главы") +
 		"\nТаблица Манги\n" +

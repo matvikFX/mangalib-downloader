@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"mangalib-downlaoder/models"
+	"mangalib-downloader/models"
 )
 
 func (c *MangaLibClient) GetData(ctx context.Context) (*models.MangaListData, error) {
@@ -90,12 +90,44 @@ func (c *MangaLibClient) GetChapters(ctx context.Context, slug string) (models.C
 		return nil, err
 	}
 
+	chapList := make(models.ChapterList, 0)
+	if c.Branch != 0 {
+		for _, chap := range chapters.Data {
+			for _, br := range chap.Branches {
+				if br.BranchID == c.Branch {
+					chapList = append(chapList, chap)
+				}
+			}
+		}
+		return chapList, nil
+	}
+
 	return chapters.Data, nil
 }
 
-func (c *MangaLibClient) GetChapter(ctx context.Context, slug string, branchID int, volume, number string) (*models.Chapter, error) {
+func (c *MangaLibClient) GetChaptersBranch(ctx context.Context, slug string, branch int) (models.ChapterList, error) {
+	chapters := &models.ChaptersData{}
+	url := c.createChaptersURL(slug)
+
+	if err := c.ReqAndDecode(ctx, url, chapters); err != nil {
+		return nil, err
+	}
+
+	var chaps models.ChapterList
+	for _, chap := range chapters.Data {
+		for _, br := range chap.Branches {
+			if br.ID == branch {
+				chaps = append(chaps, chap)
+			}
+		}
+	}
+
+	return chaps, nil
+}
+
+func (c *MangaLibClient) GetChapter(ctx context.Context, slug string, volume, number string) (*models.Chapter, error) {
 	chapter := &models.ChapterData{}
-	url := c.createChapterURL(slug, branchID, number, volume)
+	url := c.createChapterURL(slug, number, volume)
 
 	if err := c.ReqAndDecode(ctx, url, chapter); err != nil {
 		return nil, err
@@ -119,6 +151,24 @@ func (c *MangaLibClient) GetPageBytes(pageURL string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// Поличение списка без горутин
+func (c *MangaLibClient) GetListInfo(ctx context.Context, slugs []string) models.MangaInfoList {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var list models.MangaInfoList
+	for _, slug := range slugs {
+		info, err := c.GetInfo(ctx, slug)
+		if err != nil {
+			Logger.WriteLog(err.Error())
+		}
+
+		list = append(list, info)
+	}
+
+	return list
 }
 
 var (

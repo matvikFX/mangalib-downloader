@@ -3,7 +3,7 @@ package core
 import (
 	"log"
 
-	"mangalib-downlaoder/client"
+	"mangalib-downloader/client"
 
 	"github.com/rivo/tview"
 )

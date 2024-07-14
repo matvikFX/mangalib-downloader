@@ -2,12 +2,10 @@ package components
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"mangalib-downlaoder/components/utils"
-	"mangalib-downlaoder/core"
-	"mangalib-downlaoder/models"
+	"mangalib-downloader/components/utils"
+	"mangalib-downloader/core"
 
 	"github.com/rivo/tview"
 )
@@ -68,17 +66,7 @@ func (p *ListPage) setListTable() {
 			SetAlign(tview.AlignCenter).
 			SetSelectable(false)
 
-		// desc := tview.NewTableCell("Описание").
-		// 	SetAlign(tview.AlignCenter).
-		// 	SetSelectable(false)
-
-		// tags_genres := tview.NewTableCell("Теги и Жанры").
-		// 	SetAlign(tview.AlignCenter).
-		// 	SetSelectable(false)
-
 		p.table.SetCell(0, 0, title).
-			// SetCell(0, 1, desc).
-			// SetCell(0, 1, tags_genres).
 			SetFixed(1, 0)
 
 		p.table.SetTitle(fmt.Sprintf("%s. Загрузка...", tableTitle))
@@ -89,12 +77,6 @@ func (p *ListPage) setListTable() {
 		return
 	}
 
-	// list, meta, err := getInfoList(ctx)
-	// if err != nil {
-	// 	Logger.WriteLog(err.Error())
-	// 	return
-	// }
-
 	data, err := core.App.Client.GetData(ctx)
 	if err != nil {
 		Logger.WriteLog(err.Error())
@@ -104,7 +86,7 @@ func (p *ListPage) setListTable() {
 	meta := data.Meta
 	manga := data.Manga
 
-	if data.Meta.From == 0 {
+	if meta.From == 0 {
 		// Вывести модалку
 		Logger.WriteLog("манга не найдена")
 		core.App.Client.Query = ""
@@ -121,60 +103,14 @@ func (p *ListPage) setListTable() {
 		}
 
 		manga.RusNameChange()
-		// titleText := fmt.Sprintf("%-60s", manga.RusName)
 		title := tview.NewTableCell(manga.RusName).
-			// SetMaxWidth(60).
 			SetReference(manga)
 
-		// tagsText := strings.Join(manga.GetTags(), ",")
-		// tags := tview.NewTableCell(tagsText).
-		// 	SetMaxWitdth(60)
-
-		// descText := fmt.Sprintf("%-140s", manga.Description)
-		// desc := tview.NewTableCell(descText).
-		// 	SetMaxWidth(140).SetReference(manga)
-
 		p.table.SetCell(idx+1, 0, title)
-		// SetCell(idx+1, 1, t_g).
-		// SetCell(idx+1, 2, desc)
 	}
 
 	core.App.TView.QueueUpdateDraw(func() {
 		p.table.Select(1, 0)
 		p.table.ScrollToBeginning()
 	})
-}
-
-func getInfoList(ctx context.Context) (models.MangaInfoList, *models.Meta, error) {
-	data, err := core.App.Client.GetData(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	meta := data.Meta
-	mangaList := data.Manga
-
-	// mangaCount := meta.To - meta.From + 1
-	if meta.From == 0 {
-		return nil, nil, errors.New("манга не найдена")
-	}
-
-	var slugs []string
-	for _, manga := range mangaList {
-		slugs = append(slugs, manga.Slug)
-	}
-
-	list := core.App.Client.GetInfoList(ctx, slugs)
-	return list, meta, nil
-}
-
-func (p *ListPage) setSelected(row, column int) {
-	manga := p.table.GetCell(row, 0).GetReference().(*models.Manga)
-	info, err := core.App.Client.GetInfo(p.cWrap.Context, manga.Slug)
-	if err != nil {
-		Logger.WriteLog(err.Error())
-		return
-	}
-
-	ShowMangaPage(info)
 }

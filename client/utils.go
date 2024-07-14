@@ -1,12 +1,27 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
+
+func (c *MangaLibClient) GetBranchTeams(ctx context.Context, branchID int) string {
+	branchTeams := make(map[int]string)
+	if c.Branch != 0 {
+		branches, err := c.GetMangaBranches(ctx, branchID)
+		if err != nil {
+			Logger.WriteLog(err.Error())
+		}
+
+		branchTeams = branches.BranchTeams()
+	}
+
+	return branchTeams[c.Branch]
+}
 
 // teams необязательно указывать
 func (c *MangaLibClient) CreateChapterPath(teams, mangaName string, volume, number, chapName string) string {

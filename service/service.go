@@ -3,8 +3,8 @@ package service
 import (
 	"log"
 
-	"mangalib-downlaoder/components"
-	"mangalib-downlaoder/core"
+	"mangalib-downloader/components"
+	"mangalib-downloader/core"
 )
 
 func Start() {

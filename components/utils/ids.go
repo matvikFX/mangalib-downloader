@@ -5,11 +5,28 @@ const (
 	ListPageID  = "list_page"
 	MangaPageID = "manga_page"
 	HelpPageID  = "help_page"
-
-	SearchModalID = "search_modal"
 )
 
 // Modals IDs
 const (
-	MangaNotFoundID = "manga_not_found"
+	SearchModalID = "search_modal"
+	BranchModalID = "branch_modal"
+
+	// Error modals
+	NoMangaID    = "manga_not_found"
+	NoChaptersID = "chapters_not_found"
+	FirstPageID  = "first_page"
+
+	// Download modals
+	DownloadSuccessID = "downloaded_successfully"
+	DownloadFailID    = "download_faild"
+
+	// Confirm modals
+
+)
+
+// Labels
+const (
+	SearchModalLabel = "Название"
+	BranchModalLabel = "Переводчики"
 )

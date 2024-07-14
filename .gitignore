@@ -1,4 +1,9 @@
+*.exe
+*.sh
+
 .vscode
-mangalib-downlaoder
+
+MangaLib-Downloader
+
 README.md
 TODO.md

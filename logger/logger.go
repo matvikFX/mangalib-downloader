@@ -22,7 +22,7 @@ func (l *Logger) WriteLog(text string) {
 	fileName := localTime.Format(time.DateOnly) + ".log"
 	filePath := filepath.Join(logPath, fileName)
 
-	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error opening file: ", err)
 	}

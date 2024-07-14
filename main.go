@@ -1,6 +1,6 @@
 package main
 
-import "mangalib-downlaoder/service"
+import "mangalib-downloader/service"
 
 func main() {
 	service.Start()

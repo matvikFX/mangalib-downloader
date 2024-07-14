@@ -1,8 +1,8 @@
 package components
 
 import (
-	"mangalib-downlaoder/components/utils"
-	"mangalib-downlaoder/core"
+	"mangalib-downloader/components/utils"
+	"mangalib-downloader/core"
 
 	"github.com/rivo/tview"
 )
@@ -27,16 +27,16 @@ func newSearchModal() *SearchModal {
 			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
 
-	form := newForm()
+	form := newSearchForm()
 	return &SearchModal{
 		form:  form,
 		modal: modal(form, 100, 5),
 	}
 }
 
-func newForm() *tview.Form {
+func newSearchForm() *tview.Form {
 	form := tview.NewForm()
-	form.AddInputField("Название", "", 87, nil, nil).
+	form.AddInputField(utils.SearchModalLabel, "", 87, nil, nil).
 		SetTitle("Поиск по названию").SetBorder(true)
 
 	return form

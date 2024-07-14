@@ -6,6 +6,7 @@ type MangaListData struct {
 }
 
 type Manga struct {
+	ID      int    `json:"id"`
 	RusName string `json:"rus_name"`
 	EngName string `json:"eng_name"`
 	Name    string `json:"name"`

@@ -59,6 +59,7 @@ func (c *MangaLibClient) createInfoURL(slug string) string {
 	queryParams.Add("fields[]", "chap_count")
 	queryParams.Add("fields[]", "authors")
 	queryParams.Add("fields[]", "status_id")
+	queryParams.Add("branch", strconv.Itoa(c.Branch))
 
 	baseURL, _ := url.Parse(MangaLibURL + slug)
 	baseURL.RawQuery = queryParams.Encode()
@@ -78,10 +79,10 @@ func (c *MangaLibClient) createBranchesURL(id int) string {
 	return BranchesURL + strconv.Itoa(id)
 }
 
-func (c *MangaLibClient) createChapterURL(slug string, branchID int, number, volume string) string {
+func (c *MangaLibClient) createChapterURL(slug string, number, volume string) string {
 	queryParams := url.Values{}
-	if branchID != 0 {
-		queryParams.Add("branch_id", strconv.Itoa(branchID))
+	if c.Branch != 0 {
+		queryParams.Add("branch_id", strconv.Itoa(c.Branch))
 	}
 	queryParams.Add("number", number)
 	queryParams.Add("volume", volume)

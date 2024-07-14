@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"mangalib-downlaoder/components/utils"
-	"mangalib-downlaoder/core"
-	"mangalib-downlaoder/models"
+	"mangalib-downloader/components/utils"
+	"mangalib-downloader/core"
+	"mangalib-downloader/models"
 
 	"github.com/rivo/tview"
 )
 
 type MangaPage struct {
-	manga *models.MangaInfo
-
+	manga    *models.MangaInfo
 	selected map[int]bool
 
 	gird     *tview.Grid
@@ -28,6 +27,23 @@ func ShowMangaPage(manga *models.MangaInfo) {
 
 	core.App.TView.SetFocus(mangaPage.gird)
 	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.gird, true)
+}
+
+func SwitchToMangaPage(ctx context.Context, slug string, id int) {
+	info, err := core.App.Client.GetInfo(ctx, slug)
+	if err != nil {
+		Logger.WriteLog(err.Error())
+		return
+	}
+
+	brs, err := core.App.Client.GetMangaBranches(ctx, id)
+	if err != nil {
+		Logger.WriteLog(err.Error())
+		return
+	}
+
+	info.Branches = brs
+	ShowMangaPage(info)
 }
 
 func newMangaPage(manga *models.MangaInfo) *MangaPage {
@@ -99,7 +115,8 @@ func newInfoTable() *tview.Table {
 }
 
 func (p *MangaPage) setMangaInfo() {
-	info := utils.InfoText(p.manga)
+	teams := p.manga.Branches.BranchTeamList()
+	info := utils.InfoText(p.manga, teams[core.App.Client.Branch])
 
 	core.App.TView.QueueUpdateDraw(func() {
 		p.textView.SetText(info)
@@ -136,6 +153,7 @@ func (p *MangaPage) setChapters() {
 		return
 	}
 
+	branchTeams := p.manga.Branches.BranchTeams()[core.App.Client.Branch]
 	p.table.SetTitle("Главы")
 	for idx, ch := range chaps {
 		if p.cWrap.ToCancel(ctx) {
@@ -154,7 +172,7 @@ func (p *MangaPage) setChapters() {
 			SetMaxWidth(40).SetReference(ch)
 
 		var downloadStatus string
-		chapPath := core.App.Client.CreateChapterPath("", p.manga.RusName, ch.Volume, ch.Number, ch.Name)
+		chapPath := core.App.Client.CreateChapterPath(branchTeams, p.manga.RusName, ch.Volume, ch.Number, ch.Name)
 		if core.App.Client.CheckExistence(chapPath) {
 			downloadStatus = "X"
 		}
@@ -188,5 +206,5 @@ func (p *MangaPage) downloadSelected(selectList map[int]bool) {
 		chaps = append(chaps, chap)
 	}
 
-	core.App.Client.DownloadChapters(p.manga.Slug, p.manga.RusName, chaps)
+	core.App.Client.DownloadChapters(p.cWrap.Context, p.manga.ID, p.manga.Slug, p.manga.RusName, chaps)
 }

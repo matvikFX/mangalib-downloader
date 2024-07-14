@@ -4,47 +4,19 @@ import (
 	"context"
 	"io"
 	"os"
-	"strings"
 	"sync"
 
-	"mangalib-downlaoder/models"
+	"mangalib-downloader/models"
 )
 
-func (c *MangaLibClient) DownloadManga(manga *models.MangaInfo) {
-	ctx := context.Background()
-
-	branches, err := c.GetMangaBranches(ctx, manga.ID)
-	if err != nil {
-		Logger.WriteLog(err.Error())
-	}
-	manga.Branches = branches
-
-	// branch := make(map[int]string)
-	// for _, b := range manga.Branches {
-	// 	teams := make([]string, 0)
-	// 	for _, t := range b.Teams {
-	// 		teams = append(teams, t.Name)
-	// 	}
-	// 	branch[b.BranchID] = strings.Join(teams, ",")
-	// }
-
-	// Выбор ветки перевода,
-	// Если ветка одна выбра нет
-	teams := []string{}
-	var branchTeams string
-	if len(branches) != 0 {
-		for _, t := range manga.Branches[0].Teams {
-			teams = append(teams, t.Name)
-		}
-		// объединение переводчиков в ветке
-		branchTeams = strings.Join(teams, ",")
-	}
-
+func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaInfo) {
 	// Получение глав
 	chapters, err := c.GetChapters(ctx, manga.Slug)
 	if err != nil {
 		Logger.WriteLog(err.Error())
 	}
+
+	branchTeams := c.GetBranchTeams(ctx, manga.ID)
 
 	wg := &sync.WaitGroup{}
 	for _, ch := range chapters {
@@ -58,28 +30,31 @@ func (c *MangaLibClient) DownloadManga(manga *models.MangaInfo) {
 		wg.Add(1)
 		go func(ch *models.Chapter) {
 			wg.Done()
-			c.DownloadChapter(manga.Slug, ch.Branches[0].BranchID, ch.Volume, ch.Number, chapPath)
+			c.DownloadChapter(ctx, manga.Slug, ch.Volume, ch.Number, chapPath)
 		}(ch)
 	}
 	wg.Wait()
 }
 
-func (c *MangaLibClient) DownloadChapters(mangaSlug, mangaName string, chapters models.ChapterList) {
+func (c *MangaLibClient) DownloadChapters(ctx context.Context, mangaID int, mangaSlug, mangaName string, chapters models.ChapterList) {
+	branchTeams := c.GetBranchTeams(ctx, mangaID)
+	// Logger.WriteLog(fmt.Sprintf("Branch: %d, Teams: %s", c.Branch, branchTeams))
+
 	wg := &sync.WaitGroup{}
 	for _, ch := range chapters {
-		chapPath := c.CreateChapterPath("", mangaName, ch.Volume, ch.Number, ch.Name)
+		chapPath := c.CreateChapterPath(branchTeams, mangaName, ch.Volume, ch.Number, ch.Name)
 		wg.Add(1)
 		go func(vol, num string) {
 			defer wg.Done()
-			c.DownloadChapter(mangaSlug, 0, vol, num, chapPath)
+			c.DownloadChapter(ctx, mangaSlug, vol, num, chapPath)
 		}(ch.Volume, ch.Number)
 	}
 	wg.Wait()
 }
 
-func (c *MangaLibClient) DownloadChapter(slug string, branch int, volume, number, chapPath string) {
+func (c *MangaLibClient) DownloadChapter(ctx context.Context, slug string, volume, number, chapPath string) {
 	// Получение страниц
-	chapter, err := c.GetChapter(context.Background(), slug, branch, volume, number)
+	chapter, err := c.GetChapter(ctx, slug, volume, number)
 	if err != nil {
 		Logger.WriteLog(err.Error())
 	}
@@ -93,14 +68,9 @@ func (c *MangaLibClient) DownloadChapter(slug string, branch int, volume, number
 	for _, p := range chapter.Pages {
 		// Создание имени страницы
 		pageName := createPageName(p.Slug, p.Image)
-
-		// Если файл скачан, пропускаем
-		// if c.CheckExistence(chapPath, pageName) {
-		// 	continue
-		// }
-
 		// Создание пути для страницы
 		pagePath := createPagePath(chapPath, pageName)
+
 		// Если файл скачан, пропускаем
 		if _, err := os.Stat(pagePath); !os.IsNotExist(err) {
 			continue

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"mangalib-downlaoder/logger"
+	"mangalib-downloader/logger"
 )
 
 var Logger = logger.Logger{}
@@ -15,8 +15,9 @@ type MangaLibClient struct {
 	client *http.Client
 	header http.Header
 
-	Page  int
-	Query string
+	Page   int
+	Query  string
+	Branch int
 }
 
 func NewClient() *MangaLibClient {

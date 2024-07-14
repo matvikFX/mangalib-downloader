@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"mangalib-downlaoder/models"
+	"mangalib-downloader/models"
 )
 
 const info = `Называние: %s
@@ -16,15 +16,22 @@ const info = `Называние: %s
 Описание:
 %s
 
+Авторы:
+%s
 Переводчики:
 %s
-Авторы:
-%s`
+`
 
-func InfoText(manga *models.MangaInfo) string {
+func InfoText(manga *models.MangaInfo, teamList []string) string {
 	var teams string
-	for _, team := range manga.Teams {
-		teams += fmt.Sprintln(team.Name)
+	if len(teamList) == 0 {
+		for _, team := range manga.Teams {
+			teams += fmt.Sprintln(team.Name)
+		}
+	} else {
+		for _, team := range teamList {
+			teams += fmt.Sprintln(team)
+		}
 	}
 
 	var authors string
@@ -40,7 +47,7 @@ func InfoText(manga *models.MangaInfo) string {
 		manga.ReleaseDate,
 		manga.ChapterCount.Uploaded,
 		manga.Description,
-		teams, authors)
+		authors, teams)
 
 	return infoText
 }
