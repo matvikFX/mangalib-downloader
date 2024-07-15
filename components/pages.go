@@ -6,7 +6,6 @@ import (
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
 	"mangalib-downloader/logger"
-	"mangalib-downloader/models"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -37,18 +36,19 @@ func (p *ListPage) setHandlers(cancel context.CancelFunc) {
 		}
 
 		switch event.Key() {
-		case tcell.KeyEscape: // Обнулить поисковую строку
-			if core.App.Client.Query != "" {
+		case tcell.KeyEscape: // Обнулить поисковую строку и вернуться на первую страницу
+			if core.App.Client.Query != "" || core.App.Client.Page != 1 {
 				core.App.Client.Query = ""
+				core.App.Client.Page = 1
 				reload()
 			}
 		case tcell.KeyCtrlF: // Предыдущая страница
 			core.App.Client.Page++
 			reload()
-
 		case tcell.KeyCtrlB: // Следующая страница
 			if core.App.Client.Page == 1 {
 				// Показать модалку, что ниже 1 пойти нельзя
+				ShowModal(utils.NoMangaID, "Ниже первой страницы опуститься нельзя")
 				break
 			}
 			core.App.Client.Page--
@@ -57,16 +57,12 @@ func (p *ListPage) setHandlers(cancel context.CancelFunc) {
 		return event
 	})
 
-	p.table.SetSelectedFunc(func(row, column int) {
-		manga := p.table.GetCell(row, 0).GetReference().(*models.Manga)
-
-		// Показать модалку с выбором ветки перевода
-		ShowBranchModal(p.cWrap.Context, manga.Slug, manga.ID)
-	})
+	p.table.SetSelectedFunc(p.setSelectedHandler)
+	p.table.SetSelectionChangedFunc(p.selectionChangeHandler)
 }
 
 func (p *MangaPage) setHandlers(cancel context.CancelFunc) {
-	p.gird.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	p.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
 			cancel()

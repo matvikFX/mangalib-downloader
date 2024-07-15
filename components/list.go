@@ -3,15 +3,21 @@ package components
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
+	"mangalib-downloader/models"
 
 	"github.com/rivo/tview"
 )
 
+var timer *time.Timer
+
 type ListPage struct {
-	table *tview.Table
+	grid     *tview.Grid
+	textView *tview.TextView
+	table    *tview.Table
 
 	cWrap *utils.ContextWrapper
 }
@@ -19,16 +25,33 @@ type ListPage struct {
 func ShowListPage() {
 	listPage := newListPage()
 
-	core.App.TView.SetFocus(listPage.table)
-	core.App.PageHolder.AddAndSwitchToPage(utils.ListPageID, listPage.table, true)
+	core.App.TView.SetFocus(listPage.grid)
+	core.App.PageHolder.AddAndSwitchToPage(utils.ListPageID, listPage.grid, true)
 }
 
 func newListPage() *ListPage {
-	table := newListTable()
+	textView := tview.NewTextView()
+	textView.SetWrap(true).SetWordWrap(true).
+		SetTitle("Информация о манге").SetBorder(true)
+
+	table := tview.NewTable()
+	table.SetSelectable(true, false).
+		SetSeparator('|').
+		SetBorder(true)
+
+	grid := tview.NewGrid()
+	grid.SetRows(-1).SetColumns(-1, -1, -1, -1, -1, -1, -1, -1, -1).
+		SetTitle("Список манги").SetBorder(true)
+
+	grid.AddItem(table, 0, 0, 1, 3, 0, 0, true).
+		AddItem(textView, 0, 3, 1, 6, 0, 0, false)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	listPage := &ListPage{
-		table: table,
+		grid:     grid,
+		textView: textView,
+		table:    table,
+
 		cWrap: &utils.ContextWrapper{
 			Context: ctx,
 			Cancel:  cancel,
@@ -38,17 +61,6 @@ func newListPage() *ListPage {
 	go listPage.setListTable()
 
 	return listPage
-}
-
-func newListTable() *tview.Table {
-	table := tview.NewTable()
-
-	table.SetSelectable(true, false).
-		SetSeparator('|').
-		SetTitle("Список манги").
-		SetBorder(true)
-
-	return table
 }
 
 func (p *ListPage) setListTable() {
@@ -62,13 +74,6 @@ func (p *ListPage) setListTable() {
 	}
 
 	core.App.TView.QueueUpdateDraw(func() {
-		title := tview.NewTableCell("Название").
-			SetAlign(tview.AlignCenter).
-			SetSelectable(false)
-
-		p.table.SetCell(0, 0, title).
-			SetFixed(1, 0)
-
 		p.table.SetTitle(fmt.Sprintf("%s. Загрузка...", tableTitle))
 	})
 
@@ -103,14 +108,51 @@ func (p *ListPage) setListTable() {
 		}
 
 		manga.RusNameChange()
-		title := tview.NewTableCell(manga.RusName).
-			SetReference(manga)
+		title := tview.NewTableCell(
+			fmt.Sprintf("%-60s", manga.RusName)).
+			SetMaxWidth(60).SetReference(manga)
 
-		p.table.SetCell(idx+1, 0, title)
+		p.table.SetCell(idx, 0, title)
 	}
 
 	core.App.TView.QueueUpdateDraw(func() {
-		p.table.Select(1, 0)
+		p.table.Select(0, 0)
 		p.table.ScrollToBeginning()
 	})
+}
+
+func (p *ListPage) setSelectedHandler(row, _ int) {
+	if timer != nil {
+		timer.Stop()
+	}
+
+	manga := p.getMangaFromCell(row)
+	ShowBranchModal(p.cWrap.Context, manga.Slug, manga.ID)
+}
+
+func (p *ListPage) selectionChangeHandler(row, _ int) {
+	p.textView.SetTitle("Загрузка информации о манге...")
+	p.textView.SetText("")
+
+	if timer != nil {
+		timer.Stop()
+	}
+	timer = time.AfterFunc(1*time.Second, func() {
+		manga := p.getMangaFromCell(row)
+		info, err := core.App.Client.GetInfo(p.cWrap.Context, manga.Slug)
+		if err != nil {
+			Logger.WriteLog(err.Error())
+			return
+		}
+
+		infoText := utils.ListInfoText(info)
+		core.App.TView.QueueUpdateDraw(func() {
+			p.textView.SetTitle("Информация о манге")
+			p.textView.SetText(infoText)
+		})
+	})
+}
+
+func (p *ListPage) getMangaFromCell(row int) *models.Manga {
+	return p.table.GetCell(row, 0).GetReference().(*models.Manga)
 }

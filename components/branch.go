@@ -11,9 +11,10 @@ import (
 )
 
 type BranchModal struct {
+	ctx context.Context
+
 	id   int
 	slug string
-	ctx  context.Context
 
 	form  *tview.Form
 	modal tview.Primitive
@@ -49,9 +50,7 @@ func newBranchModal(ctx context.Context, slug string, id int, branches models.Br
 	form.SetTitle("Выбор ветки переводчиков").SetBorder(true)
 
 	branchModel := &BranchModal{
-		ctx:  ctx,
-		id:   id,
-		slug: slug,
+		ctx: ctx,
 
 		form:  form,
 		modal: modal(form, 100, 5),

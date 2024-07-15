@@ -15,7 +15,7 @@ type MangaPage struct {
 	manga    *models.MangaInfo
 	selected map[int]bool
 
-	gird     *tview.Grid
+	grid     *tview.Grid
 	textView *tview.TextView
 	table    *tview.Table
 
@@ -25,8 +25,8 @@ type MangaPage struct {
 func ShowMangaPage(manga *models.MangaInfo) {
 	mangaPage := newMangaPage(manga)
 
-	core.App.TView.SetFocus(mangaPage.gird)
-	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.gird, true)
+	core.App.TView.SetFocus(mangaPage.grid)
+	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.grid, true)
 }
 
 func SwitchToMangaPage(ctx context.Context, slug string, id int) {
@@ -64,7 +64,7 @@ func newMangaPage(manga *models.MangaInfo) *MangaPage {
 	mangaPage := &MangaPage{
 		manga: manga,
 
-		gird:     grid,
+		grid:     grid,
 		textView: textView,
 		table:    table,
 
