@@ -10,8 +10,6 @@ type MangaInfoData struct {
 type MangaInfo struct {
 	Manga
 
-	ID int `json:"id"`
-
 	Translate status `json:"scanlateStatus"`
 	Status    status `json:"status"`
 

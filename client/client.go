@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 
 	"mangalib-downloader/logger"
@@ -35,7 +35,7 @@ func NewClient() *MangaLibClient {
 func (c *MangaLibClient) Req(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		fmt.Println("Error creating request with context")
+		log.Println("Error creating request with context")
 		return nil, err
 	}
 
@@ -43,7 +43,7 @@ func (c *MangaLibClient) Req(ctx context.Context, url string) (*http.Response, e
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		fmt.Println("Error getting response")
+		log.Println("Error getting response")
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func (c *MangaLibClient) ReqAndDecode(ctx context.Context, url string, data any)
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
-		fmt.Println("Error decondig response")
+		log.Println("Error decondig response")
 		return err
 	}
 

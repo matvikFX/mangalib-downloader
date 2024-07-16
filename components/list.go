@@ -3,7 +3,6 @@ package components
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/rivo/tview"
 )
-
-var timer *time.Timer
 
 type ListPage struct {
 	grid     *tview.Grid
@@ -65,8 +62,7 @@ func newListPage() *ListPage {
 
 func (p *ListPage) setListTable() {
 	ctx, cancel := p.cWrap.ResetContext()
-	defer cancel()
-	p.setHandlers(cancel)
+	p.setHandlers(ctx, cancel)
 
 	tableTitle := "Популярная манга"
 	if core.App.Client.Query != "" {
@@ -92,8 +88,7 @@ func (p *ListPage) setListTable() {
 	manga := data.Manga
 
 	if meta.From == 0 {
-		// Вывести модалку
-		Logger.WriteLog("манга не найдена")
+		ShowModal(utils.NoMangaID, "Манга не найдена")
 		core.App.Client.Query = ""
 		go p.setListTable()
 	}
@@ -118,38 +113,6 @@ func (p *ListPage) setListTable() {
 	core.App.TView.QueueUpdateDraw(func() {
 		p.table.Select(0, 0)
 		p.table.ScrollToBeginning()
-	})
-}
-
-func (p *ListPage) setSelectedHandler(row, _ int) {
-	if timer != nil {
-		timer.Stop()
-	}
-
-	manga := p.getMangaFromCell(row)
-	ShowBranchModal(p.cWrap.Context, manga.Slug, manga.ID)
-}
-
-func (p *ListPage) selectionChangeHandler(row, _ int) {
-	p.textView.SetTitle("Загрузка информации о манге...")
-	p.textView.SetText("")
-
-	if timer != nil {
-		timer.Stop()
-	}
-	timer = time.AfterFunc(1*time.Second, func() {
-		manga := p.getMangaFromCell(row)
-		info, err := core.App.Client.GetInfo(p.cWrap.Context, manga.Slug)
-		if err != nil {
-			Logger.WriteLog(err.Error())
-			return
-		}
-
-		infoText := utils.ListInfoText(info)
-		core.App.TView.QueueUpdateDraw(func() {
-			p.textView.SetTitle("Информация о манге")
-			p.textView.SetText(infoText)
-		})
 	})
 }
 

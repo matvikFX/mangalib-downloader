@@ -2,16 +2,23 @@ package components
 
 import (
 	"context"
+	"time"
 
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
 	"mangalib-downloader/logger"
+	"mangalib-downloader/models"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-var Logger = logger.Logger{}
+var (
+	timer *time.Timer
+
+	Logger        = logger.Logger{}
+	selectedManga = &models.MangaInfo{}
+)
 
 func SetHandlers() {
 	core.App.TView.EnableMouse(true)
@@ -28,7 +35,7 @@ func SetHandlers() {
 	})
 }
 
-func (p *ListPage) setHandlers(cancel context.CancelFunc) {
+func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		reload := func() {
 			cancel()
@@ -57,25 +64,56 @@ func (p *ListPage) setHandlers(cancel context.CancelFunc) {
 		return event
 	})
 
-	p.table.SetSelectedFunc(p.setSelectedHandler)
-	p.table.SetSelectionChangedFunc(p.selectionChangeHandler)
+	p.table.SetSelectedFunc(func(row, _ int) {
+		if timer != nil {
+			timer.Stop()
+		}
+		ShowBranchModal(ctx)
+	})
+
+	p.table.SetSelectionChangedFunc(func(row, column int) {
+		manga := p.getMangaFromCell(row)
+		selectedManga = &models.MangaInfo{
+			Manga: *manga,
+		}
+
+		p.textView.SetTitle("Загрузка информации о манге...")
+		p.textView.SetText("")
+
+		if timer != nil {
+			timer.Stop()
+		}
+		timer = time.AfterFunc(600*time.Millisecond, func() {
+			info, err := core.App.Client.GetInfo(p.cWrap.Context, manga.Slug)
+			if err != nil {
+				Logger.WriteLog(err.Error())
+				return
+			}
+			selectedManga = info
+
+			infoText := utils.ListInfoText(info)
+			core.App.TView.QueueUpdateDraw(func() {
+				p.textView.SetTitle("Информация о манге")
+				p.textView.SetText(infoText)
+			})
+		})
+	})
 }
 
-func (p *MangaPage) setHandlers(cancel context.CancelFunc) {
+func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	p.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
 			cancel()
-			p.cWrap.Cancel()
 			core.App.Client.Branch = 0
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
 		case tcell.KeyCtrlD: // Скачивание выделенных
-			p.downloadSelected(p.selected)
+			p.downloadSelected()
 		case tcell.KeyCtrlA: // Скачивание всех глав
-			core.App.Client.DownloadManga(p.cWrap.Context, p.manga)
+			core.App.Client.DownloadManga(ctx, selectedManga)
 		case tcell.KeyCtrlP: // Выбор ветки перевода
-			if len(p.manga.Branches) > 0 {
-				ShowBranchModal(p.cWrap.Context, p.manga.Slug, p.manga.ID)
+			if len(selectedManga.Branches) > 0 {
+				ShowBranchModal(ctx)
 			} else {
 				ShowModal("NoTranslateBranch",
 					"У данной менги нет другой ветки перевода")
@@ -111,19 +149,6 @@ func (p *SearchModal) setHandlers() {
 			searchInput.SetText("")
 			core.App.PageHolder.RemovePage(utils.SearchModalID)
 			ShowListPage()
-		}
-		return event
-	})
-}
-
-func (p *BranchModal) setHandlers() {
-	p.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEscape:
-			core.App.PageHolder.RemovePage(utils.BranchModalID)
-		case tcell.KeyEnter:
-			SwitchToMangaPage(p.ctx, p.slug, p.id)
-			core.App.PageHolder.RemovePage(utils.BranchModalID)
 		}
 		return event
 	})

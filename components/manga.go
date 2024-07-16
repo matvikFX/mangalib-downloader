@@ -12,7 +12,6 @@ import (
 )
 
 type MangaPage struct {
-	manga    *models.MangaInfo
 	selected map[int]bool
 
 	grid     *tview.Grid
@@ -22,31 +21,22 @@ type MangaPage struct {
 	cWrap *utils.ContextWrapper
 }
 
-func ShowMangaPage(manga *models.MangaInfo) {
-	mangaPage := newMangaPage(manga)
+func ShowMangaPage(ctx context.Context) {
+	if selectedManga.Description == "" {
+		info, err := core.App.Client.GetInfo(ctx, selectedManga.Slug)
+		if err != nil {
+			Logger.WriteLog(err.Error())
+			return
+		}
+		selectedManga = info
+	}
 
+	mangaPage := newMangaPage()
 	core.App.TView.SetFocus(mangaPage.grid)
 	core.App.PageHolder.AddAndSwitchToPage(utils.MangaPageID, mangaPage.grid, true)
 }
 
-func SwitchToMangaPage(ctx context.Context, slug string, id int) {
-	info, err := core.App.Client.GetInfo(ctx, slug)
-	if err != nil {
-		Logger.WriteLog(err.Error())
-		return
-	}
-
-	brs, err := core.App.Client.GetMangaBranches(ctx, id)
-	if err != nil {
-		Logger.WriteLog(err.Error())
-		return
-	}
-
-	info.Branches = brs
-	ShowMangaPage(info)
-}
-
-func newMangaPage(manga *models.MangaInfo) *MangaPage {
+func newMangaPage() *MangaPage {
 	textView := tview.NewTextView()
 	textView.SetWrap(true).SetWordWrap(true).
 		SetTitle("Информация").SetBorder(true)
@@ -62,13 +52,12 @@ func newMangaPage(manga *models.MangaInfo) *MangaPage {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mangaPage := &MangaPage{
-		manga: manga,
+		selected: make(map[int]bool),
 
 		grid:     grid,
 		textView: textView,
 		table:    table,
 
-		selected: make(map[int]bool),
 		cWrap: &utils.ContextWrapper{
 			Context: ctx,
 			Cancel:  cancel,
@@ -115,8 +104,8 @@ func newInfoTable() *tview.Table {
 }
 
 func (p *MangaPage) setMangaInfo() {
-	teams := p.manga.Branches.BranchTeamList()
-	info := utils.InfoText(p.manga, teams[core.App.Client.Branch])
+	teams := selectedManga.Branches.BranchTeamList()
+	info := utils.InfoText(selectedManga, teams[core.App.Client.Branch])
 
 	core.App.TView.QueueUpdateDraw(func() {
 		p.textView.SetText(info)
@@ -125,8 +114,7 @@ func (p *MangaPage) setMangaInfo() {
 
 func (p *MangaPage) setChapters() {
 	ctx, cancel := p.cWrap.ResetContext()
-	defer cancel()
-	p.setHandlers(cancel)
+	p.setHandlers(ctx, cancel)
 
 	core.App.TView.QueueUpdateDraw(func() {
 		loading := tview.NewTableCell("Загрузка...").SetSelectable(false)
@@ -139,7 +127,7 @@ func (p *MangaPage) setChapters() {
 		return
 	}
 
-	chaps, err := core.App.Client.GetChapters(ctx, p.manga.Slug)
+	chaps, err := core.App.Client.GetChapters(ctx, selectedManga.Slug)
 	if err != nil {
 		Logger.WriteLog(err.Error())
 		return
@@ -147,20 +135,16 @@ func (p *MangaPage) setChapters() {
 
 	if len(chaps) == 0 {
 		core.App.TView.QueueUpdateDraw(func() {
-			noRes := tview.NewTableCell("Не удалось найти ни одну главу").SetSelectable(false)
+			noRes := tview.NewTableCell("Не удалось найти ни одну главу").
+				SetSelectable(false)
 			p.table.SetCell(1, 2, noRes)
 		})
 		return
 	}
 
-	branchTeams := p.manga.Branches.BranchTeams()[core.App.Client.Branch]
+	branchTeams := selectedManga.Branches.BranchTeams()[core.App.Client.Branch]
 	p.table.SetTitle("Главы")
 	for idx, ch := range chaps {
-		if p.cWrap.ToCancel(ctx) {
-			Logger.WriteLog(ctx.Err().Error())
-			return
-		}
-
 		vol := tview.NewTableCell(
 			fmt.Sprintf("%-3s", ch.Volume)).
 			SetMaxWidth(5).SetReference(ch)
@@ -172,7 +156,9 @@ func (p *MangaPage) setChapters() {
 			SetMaxWidth(40).SetReference(ch)
 
 		var downloadStatus string
-		chapPath := core.App.Client.CreateChapterPath(branchTeams, p.manga.RusName, ch.Volume, ch.Number, ch.Name)
+		chapPath := core.App.Client.CreateChapterPath(
+			branchTeams, selectedManga.RusName,
+			ch.Volume, ch.Number, ch.Name)
 		if core.App.Client.CheckExistence(chapPath) {
 			downloadStatus = "X"
 		}
@@ -190,21 +176,21 @@ func (p *MangaPage) setChapters() {
 	})
 }
 
-func (p *MangaPage) downloadSelected(selectList map[int]bool) {
+func (p *MangaPage) downloadSelected() {
 	var chaps models.ChapterList
-	for row, selected := range selectList {
+	for row, selected := range p.selected {
 		if !selected {
 			continue
 		}
 
-		chapRef := p.table.GetCell(row, 0).GetReference()
-		chap, ok := chapRef.(*models.Chapter)
-		if !ok {
+		chap := p.table.GetCell(row, 0).GetReference().(*models.Chapter)
+		if chap == nil {
 			Logger.WriteLog("Не получается привести к типу Chapter")
 			return
 		}
 		chaps = append(chaps, chap)
 	}
 
-	core.App.Client.DownloadChapters(p.cWrap.Context, p.manga.ID, p.manga.Slug, p.manga.RusName, chaps)
+	core.App.Client.DownloadChapters(p.cWrap.Context,
+		selectedManga.ID, selectedManga.Slug, selectedManga.RusName, chaps)
 }
