@@ -91,6 +91,7 @@ func (p *ListPage) setListTable() {
 		ShowModal(utils.NoMangaID, "Манга не найдена")
 		core.App.Client.Query = ""
 		go p.setListTable()
+		return
 	}
 
 	p.table.SetTitle(fmt.Sprintf("%s. Страница %d (%d-%d)",

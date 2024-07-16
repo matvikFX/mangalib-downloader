@@ -42,6 +42,13 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 			go p.setListTable()
 		}
 
+		if event.Rune() == ' ' {
+			if timer != nil {
+				timer.Stop()
+			}
+			ShowBranchModal(ctx)
+		}
+
 		switch event.Key() {
 		case tcell.KeyEscape: // Обнулить поисковую строку и вернуться на первую страницу
 			if core.App.Client.Query != "" || core.App.Client.Page != 1 {
@@ -64,7 +71,7 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 		return event
 	})
 
-	p.table.SetSelectedFunc(func(row, _ int) {
+	p.table.SetSelectedFunc(func(_, _ int) {
 		if timer != nil {
 			timer.Stop()
 		}
@@ -101,11 +108,34 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 }
 
 func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
+	select_change_row_color := func(row int) {
+		// Я не знаю почему только так работает выделение нескольких столбцов
+		// Пока оставлю так, если найду способ лучше, поменяю
+		cols := []int{0, 1, 1, 2, 2}
+		for _, col := range cols {
+			cell := p.table.GetCell(row, col)
+			if p.selected[row] {
+				cell.SetBackgroundColor(tcell.ColorBlack)
+				p.selected[row] = false
+			} else {
+				cell.SetBackgroundColor(tcell.ColorRed)
+				p.selected[row] = true
+			}
+			p.table.SetCell(row, col, cell)
+		}
+	}
+
 	p.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == ' ' {
+			row, _ := p.table.GetSelection()
+			select_change_row_color(row)
+		}
+
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
 			cancel()
 			core.App.Client.Branch = 0
+			timer.Reset(1 * time.Second)
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
 		case tcell.KeyCtrlD: // Скачивание выделенных
 			p.downloadSelected()
@@ -124,15 +154,7 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 
 	// Выбор глав для скачивания
 	p.table.SetSelectedFunc(func(row, _ int) {
-		cell := p.table.GetCell(row, 0)
-		if p.selected[row] {
-			cell.SetBackgroundColor(tcell.ColorBlack)
-			p.selected[row] = false
-		} else {
-			cell.SetBackgroundColor(tcell.ColorRed)
-			p.selected[row] = true
-		}
-		p.table.SetCell(row, 0, cell)
+		select_change_row_color(row)
 	})
 }
 

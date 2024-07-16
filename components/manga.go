@@ -28,6 +28,11 @@ func ShowMangaPage(ctx context.Context) {
 			Logger.WriteLog(err.Error())
 			return
 		}
+
+		if len(selectedManga.Branches) != 0 {
+			info.Branches = selectedManga.Branches
+		}
+
 		selectedManga = info
 	}
 
@@ -185,7 +190,6 @@ func (p *MangaPage) downloadSelected() {
 
 		chap := p.table.GetCell(row, 0).GetReference().(*models.Chapter)
 		if chap == nil {
-			Logger.WriteLog("Не получается привести к типу Chapter")
 			return
 		}
 		chaps = append(chaps, chap)

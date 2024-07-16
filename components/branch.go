@@ -28,8 +28,6 @@ func ShowBranchModal(ctx context.Context) {
 		return
 	}
 
-	Logger.WriteLog("У манги есть ветки перевода")
-
 	selectedManga.Branches = branches
 	teamsBranch := branches.BranchTeams()
 	form := newBranchForm(ctx, teamsBranch)

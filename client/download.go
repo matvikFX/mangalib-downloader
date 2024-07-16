@@ -38,7 +38,6 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 
 func (c *MangaLibClient) DownloadChapters(ctx context.Context, mangaID int, mangaSlug, mangaName string, chapters models.ChapterList) {
 	branchTeams := c.GetBranchTeams(ctx, mangaID)
-	// Logger.WriteLog(fmt.Sprintf("Branch: %d, Teams: %s", c.Branch, branchTeams))
 
 	wg := &sync.WaitGroup{}
 	for _, ch := range chapters {
