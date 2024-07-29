@@ -17,12 +17,24 @@ const info = `Называние: %s
 Описание:
 %s
 
+Теги: 
+%s
+
+Жанры:
+%s
+
 Авторы:
 %s
 Переводчики:
 %s`
 
 func InfoText(manga *models.MangaInfo, teamList []string) string {
+	ts := manga.GetTags()
+	tags := strings.Join(ts, ", ")
+
+	gs := manga.GetGenres()
+	genres := strings.Join(gs, ", ")
+
 	var teams string
 	if len(teamList) == 0 {
 		for _, team := range manga.Teams {
@@ -47,60 +59,9 @@ func InfoText(manga *models.MangaInfo, teamList []string) string {
 		manga.ReleaseDate,
 		manga.ChapterCount.Uploaded,
 		manga.Description,
+		tags,
+		genres,
 		authors, teams)
 
 	return infoText
-}
-
-const listInfo = `Называние: %s
-Теги: 
-%s
-
-Жанры:
-%s
-
-Описание:
-%s
-
-Статус: %s
-Статус перевода: %s
-Тип: %s
-Выпуск: %s
-Количество глав: %d
-
-Авторы:
-%s
-Переводчики:
-%s`
-
-func ListInfoText(manga *models.MangaInfo) string {
-	ts := manga.GetTags()
-	tags := strings.Join(ts, ", ")
-
-	gs := manga.GetGenres()
-	genres := strings.Join(gs, ", ")
-
-	var teams string
-	for _, team := range manga.Teams {
-		teams += fmt.Sprintln(team.Name)
-	}
-
-	var authors string
-	for _, author := range manga.Authors {
-		authors += fmt.Sprintln(author.Name)
-	}
-
-	listInfoText := fmt.Sprintf(listInfo,
-		manga.RusName,
-		tags,
-		genres,
-		manga.Description,
-		manga.Status.Label,
-		manga.Translate.Label,
-		manga.Type.Label,
-		manga.ReleaseDate,
-		manga.ChapterCount.Uploaded,
-		authors, teams)
-
-	return listInfoText
 }

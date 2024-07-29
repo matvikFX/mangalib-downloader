@@ -19,7 +19,8 @@ type MangaApp struct {
 
 func NewApp() *MangaApp {
 	return &MangaApp{
-		Client:     client.NewClient(),
+		Client: client.NewClient(),
+
 		TView:      tview.NewApplication(),
 		PageHolder: tview.NewPages(),
 	}

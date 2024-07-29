@@ -118,8 +118,8 @@ func (p *MangaPage) setMangaInfo() {
 }
 
 func (p *MangaPage) setChapters() {
-	ctx, cancel := p.cWrap.ResetContext()
-	p.setHandlers(ctx, cancel)
+	ctx, _ := p.cWrap.ResetContext()
+	p.setHandlers(ctx)
 
 	core.App.TView.QueueUpdateDraw(func() {
 		loading := tview.NewTableCell("Загрузка...").SetSelectable(false)
@@ -181,7 +181,9 @@ func (p *MangaPage) setChapters() {
 	})
 }
 
-func (p *MangaPage) downloadSelected() {
+func (p *MangaPage) downloadSelected(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	var chaps models.ChapterList
 	for row, selected := range p.selected {
 		if !selected {
@@ -190,11 +192,24 @@ func (p *MangaPage) downloadSelected() {
 
 		chap := p.table.GetCell(row, 0).GetReference().(*models.Chapter)
 		if chap == nil {
-			return
+			cancel()
 		}
 		chaps = append(chaps, chap)
 	}
 
-	core.App.Client.DownloadChapters(p.cWrap.Context,
+	go core.App.Client.DownloadChapters(ctx,
 		selectedManga.ID, selectedManga.Slug, selectedManga.RusName, chaps)
+
+	for {
+		select {
+		case <-ctx.Done():
+			Logger.WriteLog(ctx.Err().Error())
+		case <-core.App.Client.Downloaded:
+			modalText := fmt.Sprintf("Выбранные главы манги '%s' успешно скачаны", selectedManga.RusName)
+			ShowModal(utils.DownloadSuccessID, modalText)
+
+			go p.setChapters()
+			cancel()
+		}
+	}
 }

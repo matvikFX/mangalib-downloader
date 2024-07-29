@@ -1,5 +1,13 @@
-*.exe
 *.sh
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+*.out
+
+*.test
 
 .vscode
 

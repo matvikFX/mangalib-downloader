@@ -9,21 +9,40 @@ import (
 	"time"
 )
 
-type Logger struct{}
+type Logger struct {
+	Path string
+}
 
-var logPath = filepath.Join(os.Getenv("HOME"), "MangaDownloader", "Logs")
+func NewLogger(path string) *Logger {
+	logger := &Logger{
+		Path: path,
+	}
+
+	if path != "" {
+		if !isValidPath(path) {
+			log.Println("Введенный текст не является абсолютным путем")
+			logger.SetDefaultLogsPath()
+		}
+	}
+
+	if path == "" {
+		logger.SetDefaultLogsPath()
+	}
+
+	return logger
+}
 
 func (l *Logger) WriteLog(text string) {
 	localTime := time.Now().Local()
 
-	err := os.MkdirAll(logPath, 0o755)
+	err := os.MkdirAll(l.Path, 0o755)
 	if err != nil {
 		log.Println("Error creating log folder: ", err)
 		return
 	}
 
 	fileName := localTime.Format(time.DateOnly) + ".log"
-	filePath := filepath.Join(logPath, fileName)
+	filePath := filepath.Join(l.Path, fileName)
 
 	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	if err != nil {
@@ -43,14 +62,14 @@ func (l *Logger) WriteLog(text string) {
 func (l *Logger) WriteJSON(mangaStruct any) {
 	localTime := time.Now().Local()
 
-	err := os.MkdirAll(logPath, 0o755)
+	err := os.MkdirAll(l.Path, 0o755)
 	if err != nil {
 		log.Println("Error creating log folder: ", err)
 		return
 	}
 
 	fileName := localTime.Format(time.DateOnly) + ".json"
-	filePath := filepath.Join(logPath, fileName)
+	filePath := filepath.Join(l.Path, fileName)
 
 	jsonData, err := json.Marshal(mangaStruct)
 	if err != nil {

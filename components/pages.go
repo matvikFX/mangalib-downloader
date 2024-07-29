@@ -16,21 +16,27 @@ import (
 var (
 	timer *time.Timer
 
-	Logger        = logger.Logger{}
+	Logger        = logger.NewLogger("")
 	selectedManga = &models.MangaInfo{}
 )
 
 func SetHandlers() {
 	core.App.TView.EnableMouse(true)
 	core.App.TView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'P': // Пути
+			ShowPathModal()
+		case 'H': // Помощь
+			ShowHelpPage()
+		}
+
 		switch event.Key() {
 		case tcell.KeyCtrlS: // Поиск по названию
 			ShowSearchModal()
-		case tcell.KeyCtrlO: // Помощь
-			ShowHelpPage()
 		case tcell.KeyCtrlC: // Завершение рабоыт
 			core.App.TView.Stop()
 		}
+
 		return event
 	})
 }
@@ -98,7 +104,7 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 			}
 			selectedManga = info
 
-			infoText := utils.ListInfoText(info)
+			infoText := utils.InfoText(info, nil)
 			core.App.TView.QueueUpdateDraw(func() {
 				p.textView.SetTitle("Информация о манге")
 				p.textView.SetText(infoText)
@@ -107,7 +113,9 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	})
 }
 
-func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
+func (p *MangaPage) setHandlers(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	select_change_row_color := func(row int) {
 		// Я не знаю почему только так работает выделение нескольких столбцов
 		// Пока оставлю так, если найду способ лучше, поменяю
@@ -116,7 +124,7 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 			cell := p.table.GetCell(row, col)
 			if p.selected[row] {
 				cell.SetBackgroundColor(tcell.ColorBlack)
-				p.selected[row] = false
+				delete(p.selected, row)
 			} else {
 				cell.SetBackgroundColor(tcell.ColorRed)
 				p.selected[row] = true
@@ -133,14 +141,14 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
-			cancel()
 			core.App.Client.Branch = 0
 			timer.Reset(1 * time.Second)
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
+			cancel()
 		case tcell.KeyCtrlD: // Скачивание выделенных
-			p.downloadSelected()
+			go p.downloadSelected(ctx)
 		case tcell.KeyCtrlA: // Скачивание всех глав
-			core.App.Client.DownloadManga(ctx, selectedManga)
+			go core.App.Client.DownloadManga(ctx, selectedManga)
 		case tcell.KeyCtrlP: // Выбор ветки перевода
 			if len(selectedManga.Branches) > 0 {
 				ShowBranchModal(ctx)
@@ -161,7 +169,7 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 func (p *SearchModal) setHandlers() {
 	p.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEscape: // Закрытие окна поиска
+		case tcell.KeyEscape: // Закрытие страницы поиска
 			core.App.PageHolder.RemovePage(utils.SearchModalID)
 		case tcell.KeyEnter:
 			searchInput := p.form.GetFormItemByLabel(utils.SearchModalLabel).(*tview.InputField)
@@ -171,6 +179,16 @@ func (p *SearchModal) setHandlers() {
 			searchInput.SetText("")
 			core.App.PageHolder.RemovePage(utils.SearchModalID)
 			ShowListPage()
+		}
+		return event
+	})
+}
+
+func (p *PathModal) setHandlers() {
+	p.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			core.App.PageHolder.RemovePage(utils.PathsModalID)
 		}
 		return event
 	})

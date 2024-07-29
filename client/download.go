@@ -15,12 +15,10 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 	if err != nil {
 		Logger.WriteLog(err.Error())
 	}
-
 	branchTeams := c.GetBranchTeams(ctx, manga.ID)
 
 	wg := &sync.WaitGroup{}
 	for _, ch := range chapters {
-		manga.RusName = removeChars(manga.RusName)
 		chapPath := c.CreateChapterPath(branchTeams, manga.RusName, ch.Volume, ch.Number, ch.Name)
 		if err = os.MkdirAll(chapPath, 0o755); err != nil {
 			Logger.WriteLog(err.Error())
@@ -34,9 +32,12 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 		}(ch)
 	}
 	wg.Wait()
+	c.Downloaded <- struct{}{}
 }
 
-func (c *MangaLibClient) DownloadChapters(ctx context.Context, mangaID int, mangaSlug, mangaName string, chapters models.ChapterList) {
+func (c *MangaLibClient) DownloadChapters(ctx context.Context,
+	mangaID int, mangaSlug, mangaName string, chapters models.ChapterList,
+) {
 	branchTeams := c.GetBranchTeams(ctx, mangaID)
 
 	wg := &sync.WaitGroup{}
@@ -49,9 +50,15 @@ func (c *MangaLibClient) DownloadChapters(ctx context.Context, mangaID int, mang
 		}(ch.Volume, ch.Number)
 	}
 	wg.Wait()
+	c.Downloaded <- struct{}{}
 }
 
-func (c *MangaLibClient) DownloadChapter(ctx context.Context, slug string, volume, number, chapPath string) {
+func (c *MangaLibClient) DownloadChapter(ctx context.Context,
+	slug string, volume, number string, chapPath string,
+) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// Получение страниц
 	chapter, err := c.GetChapter(ctx, slug, volume, number)
 	if err != nil {
@@ -86,7 +93,6 @@ func (c *MangaLibClient) DownloadChapter(ctx context.Context, slug string, volum
 }
 
 func (c *MangaLibClient) downloadPage(pagePath, pageURL string) {
-	// url := "https://img33.imgslib.link/" + pageURL
 	url := c.createPageURL(pageURL)
 	resp, err := c.client.Get(url)
 	if err != nil {

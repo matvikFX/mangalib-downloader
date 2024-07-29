@@ -11,6 +11,7 @@ const (
 const (
 	SearchModalID = "search_modal"
 	BranchModalID = "branch_modal"
+	PathsModalID  = "paths_modal"
 
 	// Error modals
 	NoMangaID    = "manga_not_found"
@@ -29,4 +30,7 @@ const (
 const (
 	SearchModalLabel = "Название"
 	BranchModalLabel = "Переводчики"
+
+	PathDownloadLabel = "Путь папки скачанной манги"
+	PathLogsLabel     = "Путь папки файлов логов"
 )

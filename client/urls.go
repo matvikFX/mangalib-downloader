@@ -27,6 +27,7 @@ func (c *MangaLibClient) createSearchURL(name string) string {
 	queryParams.Add("fields[]", "releaseDate")
 	queryParams.Add("site_id[]", "1")
 	queryParams.Add("q", name)
+	queryParams.Add("page", strconv.Itoa(c.Page))
 
 	baseURL, _ := url.Parse(MangaLibURL)
 	baseURL.RawQuery = queryParams.Encode()

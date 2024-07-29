@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -25,8 +26,7 @@ func (c *MangaLibClient) GetBranchTeams(ctx context.Context, branchID int) strin
 
 // teams необязательно указывать
 func (c *MangaLibClient) CreateChapterPath(teams, mangaName string, volume, number, chapName string) string {
-	downloadsPath := filepath.Join(os.Getenv("HOME"), "MangaDownloader")
-
+	mangaName = removeChars(mangaName)
 	teams = removeChars(teams)
 	chapName = removeChars(chapName)
 
@@ -40,9 +40,9 @@ func (c *MangaLibClient) CreateChapterPath(teams, mangaName string, volume, numb
 
 	var chapterPath string
 	if teams == "" {
-		chapterPath = filepath.Join(downloadsPath, mangaName, chapDir)
+		chapterPath = filepath.Join(c.DownloadPath, mangaName, chapDir)
 	} else {
-		chapterPath = filepath.Join(downloadsPath, mangaName, teams, chapDir)
+		chapterPath = filepath.Join(c.DownloadPath, mangaName, teams, chapDir)
 	}
 
 	return chapterPath
@@ -68,6 +68,17 @@ func (c *MangaLibClient) createFolder(rusName, branchTeams, volume, number, name
 	}
 
 	return nil
+}
+
+func SetDefaultDownloadPath() string {
+	var defaultDownloadPath string
+	switch runtime.GOOS {
+	case "windows":
+		defaultDownloadPath = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader")
+	default:
+		defaultDownloadPath = filepath.Join(os.Getenv("HOME"), "MangaDownloader")
+	}
+	return defaultDownloadPath
 }
 
 func createFile(data []byte, pagePath string) error {
