@@ -28,8 +28,9 @@ func newHelpPage() *HelpPage {
 		"Универсальные\n" +
 		fmt.Sprintf(textFormat, "Escape", "Закрыть окно") +
 		fmt.Sprintf(textFormat, "Ctrl + C", "Закрыть программу") +
-		fmt.Sprintf(textFormat, "Ctrl + O", "Помощь") +
 		fmt.Sprintf(textFormat, "Ctrl + S", "Поиск") +
+		fmt.Sprintf(textFormat, "Shift + H", "Помощь") +
+		fmt.Sprintf(textFormat, "Shift + P", "Изменить пути") +
 		"\nСтраницы Манги\n" +
 		fmt.Sprintf(textFormat, "Enter", "Выбрать главу") +
 		fmt.Sprintf(textFormat, "Ctrl + P", "Выбор ветки перевода") +

@@ -10,11 +10,9 @@ import (
 	"mangalib-downloader/logger"
 )
 
-var Logger = logger.NewLogger("")
-
 type MangaLibClient struct {
 	client *http.Client
-	header http.Header
+	Logger *logger.Logger
 
 	Downloaded   chan struct{}
 	DownloadPath string
@@ -25,15 +23,12 @@ type MangaLibClient struct {
 }
 
 func NewClient() *MangaLibClient {
-	header := http.Header{}
-	header.Set("Content-Type", "application/json")
-
 	return &MangaLibClient{
+		Logger: logger.NewLogger(),
 		client: http.DefaultClient,
-		header: header,
 
-		Downloaded:   make(chan struct{}),
-		DownloadPath: SetDefaultDownloadPath(),
+		Downloaded:   make(chan struct{}, 1),
+		DownloadPath: DefaultDownloadPath(),
 
 		Page:  1,
 		Query: "",
@@ -44,7 +39,7 @@ func (c *MangaLibClient) ChangePath(path string) {
 	if isValidPath(path) {
 		c.DownloadPath = path
 	} else {
-		SetDefaultDownloadPath()
+		DefaultDownloadPath()
 	}
 }
 
@@ -67,7 +62,9 @@ func (c *MangaLibClient) Req(ctx context.Context, url string) (*http.Response, e
 		return nil, err
 	}
 
-	req.Header = c.header
+	header := http.Header{}
+	header.Set("Content-Type", "application/json")
+	req.Header = header
 
 	resp, err := c.client.Do(req)
 	if err != nil {

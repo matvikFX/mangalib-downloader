@@ -15,15 +15,13 @@ const (
 
 	// Error modals
 	NoMangaID    = "manga_not_found"
+	NoBranchesID = "no_branches"
 	NoChaptersID = "chapters_not_found"
 	FirstPageID  = "first_page"
 
 	// Download modals
 	DownloadSuccessID = "downloaded_successfully"
 	DownloadFailID    = "download_faild"
-
-	// Confirm modals
-
 )
 
 // Labels

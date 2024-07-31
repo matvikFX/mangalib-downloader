@@ -15,8 +15,6 @@ type ListPage struct {
 	grid     *tview.Grid
 	textView *tview.TextView
 	table    *tview.Table
-
-	cWrap *utils.ContextWrapper
 }
 
 func ShowListPage() {
@@ -43,16 +41,10 @@ func newListPage() *ListPage {
 	grid.AddItem(table, 0, 0, 1, 3, 0, 0, true).
 		AddItem(textView, 0, 3, 1, 6, 0, 0, false)
 
-	ctx, cancel := context.WithCancel(context.Background())
 	listPage := &ListPage{
 		grid:     grid,
 		textView: textView,
 		table:    table,
-
-		cWrap: &utils.ContextWrapper{
-			Context: ctx,
-			Cancel:  cancel,
-		},
 	}
 
 	go listPage.setListTable()
@@ -61,7 +53,7 @@ func newListPage() *ListPage {
 }
 
 func (p *ListPage) setListTable() {
-	ctx, cancel := p.cWrap.ResetContext()
+	ctx, cancel := context.WithCancel(context.Background())
 	p.setHandlers(ctx, cancel)
 
 	tableTitle := "Популярная манга"
@@ -73,14 +65,9 @@ func (p *ListPage) setListTable() {
 		p.table.SetTitle(fmt.Sprintf("%s. Загрузка...", tableTitle))
 	})
 
-	if p.cWrap.ToCancel(ctx) {
-		Logger.WriteLog(ctx.Err().Error())
-		return
-	}
-
 	data, err := core.App.Client.GetData(ctx)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		core.App.Client.Logger.WriteLog(err.Error())
 		return
 	}
 
@@ -98,10 +85,6 @@ func (p *ListPage) setListTable() {
 		tableTitle, meta.Page, meta.From, meta.To))
 
 	for idx, manga := range manga {
-		if p.cWrap.ToCancel(ctx) {
-			Logger.WriteLog(ctx.Err().Error())
-			return
-		}
 
 		manga.RusNameChange()
 		title := tview.NewTableCell(

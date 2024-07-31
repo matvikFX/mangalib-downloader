@@ -6,21 +6,15 @@ import (
 	"runtime"
 )
 
-func (l *Logger) SetDefaultLogsPath() {
+func DefaultLogsPath() string {
+	var path string
 	switch runtime.GOOS {
 	case "windows":
-		l.Path = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader", "Logs")
+		path = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader", "Logs")
 	default:
-		l.Path = filepath.Join(os.Getenv("HOME"), "MangaDownloader", "Logs")
+		path = filepath.Join(os.Getenv("HOME"), "MangaDownloader", "Logs")
 	}
-}
-
-func (l *Logger) ChangePath(path string) {
-	if isValidPath(path) {
-		l.Path = path
-	} else {
-		l.SetDefaultLogsPath()
-	}
+	return path
 }
 
 func isValidPath(path string) bool {
@@ -33,13 +27,4 @@ func isValidPath(path string) bool {
 	}
 
 	return false
-}
-
-func (l *Logger) checkPath() {
-	switch l.Path {
-	case "", ".", " ":
-		l.SetDefaultLogsPath()
-	case "/":
-		// "Вы точно хотите сохранять логи в корневую папку?"
-	}
 }

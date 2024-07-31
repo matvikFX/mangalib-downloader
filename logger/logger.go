@@ -13,23 +13,10 @@ type Logger struct {
 	Path string
 }
 
-func NewLogger(path string) *Logger {
-	logger := &Logger{
-		Path: path,
+func NewLogger() *Logger {
+	return &Logger{
+		Path: DefaultLogsPath(),
 	}
-
-	if path != "" {
-		if !isValidPath(path) {
-			log.Println("Введенный текст не является абсолютным путем")
-			logger.SetDefaultLogsPath()
-		}
-	}
-
-	if path == "" {
-		logger.SetDefaultLogsPath()
-	}
-
-	return logger
 }
 
 func (l *Logger) WriteLog(text string) {
@@ -80,5 +67,13 @@ func (l *Logger) WriteJSON(mangaStruct any) {
 	if err := os.WriteFile(filePath, jsonData, os.ModePerm); err != nil {
 		log.Println("Error writing into file: ", err)
 		return
+	}
+}
+
+func (l *Logger) ChangePath(path string) {
+	if isValidPath(path) {
+		l.Path = path
+	} else {
+		l.Path = DefaultLogsPath()
 	}
 }

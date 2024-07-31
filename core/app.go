@@ -28,6 +28,8 @@ func NewApp() *MangaApp {
 
 func (m *MangaApp) Init() {
 	log.Println("Initializing app")
+	m.LoadConfig()
+
 	m.TView.SetRoot(m.PageHolder, true).SetFocus(m.PageHolder)
 }
 

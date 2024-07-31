@@ -19,7 +19,7 @@ func ShowBranchModal(ctx context.Context) {
 
 	branches, err := core.App.Client.GetMangaBranches(ctx, selectedManga.ID)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		core.App.Client.Logger.WriteLog(err.Error())
 		return
 	}
 

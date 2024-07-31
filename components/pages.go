@@ -6,7 +6,6 @@ import (
 
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
-	"mangalib-downloader/logger"
 	"mangalib-downloader/models"
 
 	"github.com/gdamore/tcell/v2"
@@ -16,7 +15,6 @@ import (
 var (
 	timer *time.Timer
 
-	Logger        = logger.NewLogger("")
 	selectedManga = &models.MangaInfo{}
 )
 
@@ -96,10 +94,10 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 		if timer != nil {
 			timer.Stop()
 		}
-		timer = time.AfterFunc(600*time.Millisecond, func() {
-			info, err := core.App.Client.GetInfo(p.cWrap.Context, manga.Slug)
+		timer = time.AfterFunc(800*time.Millisecond, func() {
+			info, err := core.App.Client.GetInfo(ctx, manga.Slug)
 			if err != nil {
-				Logger.WriteLog(err.Error())
+				core.App.Client.Logger.WriteLog(err.Error())
 				return
 			}
 			selectedManga = info
@@ -113,9 +111,7 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	})
 }
 
-func (p *MangaPage) setHandlers(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-
+func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	select_change_row_color := func(row int) {
 		// Я не знаю почему только так работает выделение нескольких столбцов
 		// Пока оставлю так, если найду способ лучше, поменяю
@@ -146,14 +142,24 @@ func (p *MangaPage) setHandlers(ctx context.Context) {
 			core.App.PageHolder.RemovePage(utils.MangaPageID)
 			cancel()
 		case tcell.KeyCtrlD: // Скачивание выделенных
-			go p.downloadSelected(ctx)
+			if len(p.selected) != 0 {
+				go p.downloadSelected(ctx)
+			}
 		case tcell.KeyCtrlA: // Скачивание всех глав
-			go core.App.Client.DownloadManga(ctx, selectedManga)
+			go func() {
+				core.App.Client.DownloadManga(ctx, selectedManga)
+
+				<-core.App.Client.Downloaded
+				ShowModal(utils.DownloadSuccessID,
+					"Манга '"+selectedManga.RusName+"' успешно скачана")
+
+				go p.setChapters(ctx)
+			}()
 		case tcell.KeyCtrlP: // Выбор ветки перевода
 			if len(selectedManga.Branches) > 0 {
 				ShowBranchModal(ctx)
 			} else {
-				ShowModal("NoTranslateBranch",
+				ShowModal(utils.NoBranchesID,
 					"У данной менги нет другой ветки перевода")
 			}
 		}

@@ -13,7 +13,7 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 	// Получение глав
 	chapters, err := c.GetChapters(ctx, manga.Slug)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
 	}
 	branchTeams := c.GetBranchTeams(ctx, manga.ID)
 
@@ -21,7 +21,7 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 	for _, ch := range chapters {
 		chapPath := c.CreateChapterPath(branchTeams, manga.RusName, ch.Volume, ch.Number, ch.Name)
 		if err = os.MkdirAll(chapPath, 0o755); err != nil {
-			Logger.WriteLog(err.Error())
+			c.Logger.WriteLog(err.Error())
 		}
 
 		// Скачивание главы
@@ -31,8 +31,11 @@ func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaI
 			c.DownloadChapter(ctx, manga.Slug, ch.Volume, ch.Number, chapPath)
 		}(ch)
 	}
-	wg.Wait()
-	c.Downloaded <- struct{}{}
+
+	go func() {
+		wg.Wait()
+		c.Downloaded <- struct{}{}
+	}()
 }
 
 func (c *MangaLibClient) DownloadChapters(ctx context.Context,
@@ -49,24 +52,25 @@ func (c *MangaLibClient) DownloadChapters(ctx context.Context,
 			c.DownloadChapter(ctx, mangaSlug, vol, num, chapPath)
 		}(ch.Volume, ch.Number)
 	}
-	wg.Wait()
-	c.Downloaded <- struct{}{}
+
+	go func() {
+		wg.Wait()
+		c.Downloaded <- struct{}{}
+	}()
 }
 
 func (c *MangaLibClient) DownloadChapter(ctx context.Context,
 	slug string, volume, number string, chapPath string,
 ) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	// Получение страниц
 	chapter, err := c.GetChapter(ctx, slug, volume, number)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
+		return
 	}
 
 	if err = os.MkdirAll(chapPath, 0o755); err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
 	}
 
 	// Скачивание страниц
@@ -78,7 +82,7 @@ func (c *MangaLibClient) DownloadChapter(ctx context.Context,
 		pagePath := createPagePath(chapPath, pageName)
 
 		// Если файл скачан, пропускаем
-		if _, err := os.Stat(pagePath); !os.IsNotExist(err) {
+		if c.CheckExistence(pagePath) {
 			continue
 		}
 
@@ -94,18 +98,20 @@ func (c *MangaLibClient) DownloadChapter(ctx context.Context,
 
 func (c *MangaLibClient) downloadPage(pagePath, pageURL string) {
 	url := c.createPageURL(pageURL)
-	resp, err := c.client.Get(url)
+
+	resp, err := c.Req(context.Background(), url)
+	// resp, err := c.client.Get(url)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
 	}
 
 	if err = createFile(body, pagePath); err != nil {
-		Logger.WriteLog(err.Error())
+		c.Logger.WriteLog(err.Error())
 	}
 }

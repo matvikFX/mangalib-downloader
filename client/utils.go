@@ -15,7 +15,7 @@ func (c *MangaLibClient) GetBranchTeams(ctx context.Context, branchID int) strin
 	if c.Branch != 0 {
 		branches, err := c.GetMangaBranches(ctx, branchID)
 		if err != nil {
-			Logger.WriteLog(err.Error())
+			c.Logger.WriteLog(err.Error())
 		}
 
 		branchTeams = branches.BranchTeams()
@@ -70,15 +70,15 @@ func (c *MangaLibClient) createFolder(rusName, branchTeams, volume, number, name
 	return nil
 }
 
-func SetDefaultDownloadPath() string {
-	var defaultDownloadPath string
+func DefaultDownloadPath() string {
+	var path string
 	switch runtime.GOOS {
 	case "windows":
-		defaultDownloadPath = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader")
+		path = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader")
 	default:
-		defaultDownloadPath = filepath.Join(os.Getenv("HOME"), "MangaDownloader")
+		path = filepath.Join(os.Getenv("HOME"), "MangaDownloader")
 	}
-	return defaultDownloadPath
+	return path
 }
 
 func createFile(data []byte, pagePath string) error {
