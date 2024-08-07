@@ -26,14 +26,14 @@ func newHelpPage() *HelpPage {
 	text := "Сочетания клавиш\n" +
 		"-------------------------\n\n" +
 		"Универсальные\n" +
-		fmt.Sprintf(textFormat, "Escape", "Закрыть окно") +
+		fmt.Sprintf(textFormat, "Escape", "Закрыть окно/страницу") +
 		fmt.Sprintf(textFormat, "Ctrl + C", "Закрыть программу") +
 		fmt.Sprintf(textFormat, "Ctrl + S", "Поиск") +
 		fmt.Sprintf(textFormat, "Shift + H", "Помощь") +
 		fmt.Sprintf(textFormat, "Shift + P", "Изменить пути") +
 		"\nСтраницы Манги\n" +
-		fmt.Sprintf(textFormat, "Enter", "Выбрать главу") +
-		fmt.Sprintf(textFormat, "Ctrl + P", "Выбор ветки перевода") +
+		fmt.Sprintf(textFormat, "Enter/Space", "Выбрать главу") +
+		fmt.Sprintf(textFormat, "Ctrl + T", "Выбор ветки перевода") +
 		fmt.Sprintf(textFormat, "Ctrl + D", "Скачать выбранные главы") +
 		fmt.Sprintf(textFormat, "Ctrl + A", "Скачать все главы") +
 		"\nТаблица Манги\n" +

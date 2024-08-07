@@ -3,6 +3,7 @@ package components
 import (
 	"context"
 	"fmt"
+	"unicode/utf8"
 
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/core"
@@ -76,7 +77,11 @@ func (p *ListPage) setListTable() {
 
 	if meta.From == 0 {
 		ShowModal(utils.NoMangaID, "Манга не найдена")
-		core.App.Client.Query = ""
+		if core.App.Client.Page == 1 {
+			core.App.Client.Query = ""
+		} else {
+			core.App.Client.Page--
+		}
 		go p.setListTable()
 		return
 	}
@@ -85,8 +90,11 @@ func (p *ListPage) setListTable() {
 		tableTitle, meta.Page, meta.From, meta.To))
 
 	for idx, manga := range manga {
-
 		manga.RusNameChange()
+		if utf8.RuneCountInString(manga.RusName) > 60 {
+			runes := []rune(manga.RusName)
+			manga.RusName = string(runes[:60])
+		}
 		title := tview.NewTableCell(
 			fmt.Sprintf("%-60s", manga.RusName)).
 			SetMaxWidth(60).SetReference(manga)

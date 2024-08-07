@@ -22,7 +22,7 @@ func SetHandlers() {
 	core.App.TView.EnableMouse(true)
 	core.App.TView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
-		case 'P': // Пути
+		case 'P': // Настройки
 			ShowPathModal()
 		case 'H': // Помощь
 			ShowHelpPage()
@@ -31,7 +31,7 @@ func SetHandlers() {
 		switch event.Key() {
 		case tcell.KeyCtrlS: // Поиск по названию
 			ShowSearchModal()
-		case tcell.KeyCtrlC: // Завершение рабоыт
+		case tcell.KeyCtrlC: // Завершение работы
 			core.App.TView.Stop()
 		}
 
@@ -65,7 +65,6 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 			reload()
 		case tcell.KeyCtrlB: // Следующая страница
 			if core.App.Client.Page == 1 {
-				// Показать модалку, что ниже 1 пойти нельзя
 				ShowModal(utils.NoMangaID, "Ниже первой страницы опуститься нельзя")
 				break
 			}
@@ -100,6 +99,12 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 				core.App.Client.Logger.WriteLog(err.Error())
 				return
 			}
+			branches, err := core.App.Client.GetMangaBranches(ctx, selectedManga.ID)
+			if err != nil {
+				core.App.Client.Logger.WriteLog(err.Error())
+				return
+			}
+			info.Branches = branches
 			selectedManga = info
 
 			infoText := utils.InfoText(info, nil)
@@ -155,7 +160,7 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 
 				go p.setChapters(ctx)
 			}()
-		case tcell.KeyCtrlP: // Выбор ветки перевода
+		case tcell.KeyCtrlT: // Выбор ветки перевода
 			if len(selectedManga.Branches) > 0 {
 				ShowBranchModal(ctx)
 			} else {
@@ -181,6 +186,7 @@ func (p *SearchModal) setHandlers() {
 			searchInput := p.form.GetFormItemByLabel(utils.SearchModalLabel).(*tview.InputField)
 			formText := searchInput.GetText()
 			core.App.Client.Query = formText
+			core.App.Client.Page = 1
 
 			searchInput.SetText("")
 			core.App.PageHolder.RemovePage(utils.SearchModalID)

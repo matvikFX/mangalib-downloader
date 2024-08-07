@@ -5,6 +5,14 @@ import (
 	"strconv"
 )
 
+/*
+1 - Manga
+2 - Yaoi/Yuri (для скачивания нужен аккаунт)
+3 - Ranobe
+4 - Hentai (для скачивания нужен аккаунт)
+5 - Anime
+*/
+
 const (
 	// Оснвная ссылка на API MangaLib
 	MangaLibURL = "https://api.lib.social/api/manga/"
