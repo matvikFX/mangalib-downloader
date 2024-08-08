@@ -2,55 +2,70 @@ package client
 
 import (
 	"context"
-	"io"
 	"os"
 	"sync"
 
 	"mangalib-downloader/models"
 )
 
+const workerNum = 4
+
+func (c *MangaLibClient) downloader(ctx context.Context,
+	reciever <-chan *models.Chapter,
+	manga models.Manga, teams string,
+) {
+	for {
+		select {
+		case <-ctx.Done():
+			c.Logger.WriteLog(ctx.Err().Error())
+			return
+		case chap, ok := <-reciever:
+			if !ok {
+				return
+			}
+
+			chapPath := c.CreateChapterPath(teams, manga.RusName,
+				chap.Volume, chap.Number, chap.Name)
+
+			if err := os.MkdirAll(chapPath, 0o755); err != nil {
+				c.Logger.WriteLog(err.Error())
+			}
+
+			c.DownloadChapter(ctx, manga.Slug, chap.Volume, chap.Number, chapPath)
+		}
+	}
+}
+
 func (c *MangaLibClient) DownloadManga(ctx context.Context, manga *models.MangaInfo) {
-	// Получение глав
 	chapters, err := c.GetChapters(ctx, manga.Slug)
 	if err != nil {
 		c.Logger.WriteLog(err.Error())
-	}
-	branchTeams := c.GetBranchTeams(ctx, manga.ID)
-
-	wg := &sync.WaitGroup{}
-	for _, ch := range chapters {
-		chapPath := c.CreateChapterPath(branchTeams, manga.RusName, ch.Volume, ch.Number, ch.Name)
-		if err = os.MkdirAll(chapPath, 0o755); err != nil {
-			c.Logger.WriteLog(err.Error())
-		}
-
-		// Скачивание главы
-		wg.Add(1)
-		go func(ch *models.Chapter) {
-			wg.Done()
-			c.DownloadChapter(ctx, manga.Slug, ch.Volume, ch.Number, chapPath)
-		}(ch)
+		return
 	}
 
-	go func() {
-		wg.Wait()
-		c.Downloaded <- struct{}{}
-	}()
+	c.DownloadChapters(ctx, manga.Manga, chapters)
 }
 
 func (c *MangaLibClient) DownloadChapters(ctx context.Context,
-	mangaID int, mangaSlug, mangaName string, chapters models.ChapterList,
+	manga models.Manga, chapters models.ChapterList,
 ) {
-	branchTeams := c.GetBranchTeams(ctx, mangaID)
-
 	wg := &sync.WaitGroup{}
-	for _, ch := range chapters {
-		chapPath := c.CreateChapterPath(branchTeams, mangaName, ch.Volume, ch.Number, ch.Name)
+	branchTeams := c.GetBranchTeams(ctx, manga.ID)
+	chapChan := make(chan *models.Chapter, len(chapters))
+
+	go func() {
+		for _, chap := range chapters {
+			chapChan <- chap
+		}
+		close(chapChan)
+	}()
+
+	for range workerNum {
 		wg.Add(1)
-		go func(vol, num string) {
+		go func() {
 			defer wg.Done()
-			c.DownloadChapter(ctx, mangaSlug, vol, num, chapPath)
-		}(ch.Volume, ch.Number)
+			c.downloader(ctx, chapChan, manga, branchTeams)
+		}()
 	}
 
 	go func() {
@@ -71,6 +86,7 @@ func (c *MangaLibClient) DownloadChapter(ctx context.Context,
 
 	if err = os.MkdirAll(chapPath, 0o755); err != nil {
 		c.Logger.WriteLog(err.Error())
+		return
 	}
 
 	// Скачивание страниц
@@ -90,28 +106,20 @@ func (c *MangaLibClient) DownloadChapter(ctx context.Context,
 		wg.Add(1)
 		go func(url string) {
 			defer wg.Done()
-			c.downloadPage(pagePath, url)
+			c.downloadPage(ctx, pagePath, url)
 		}(p.URL)
 	}
 	wg.Wait()
 }
 
-func (c *MangaLibClient) downloadPage(pagePath, pageURL string) {
+func (c *MangaLibClient) downloadPage(ctx context.Context, pagePath, pageURL string) {
 	url := c.createPageURL(pageURL)
-
-	resp, err := c.Req(context.Background(), url)
-	// resp, err := c.client.Get(url)
-	if err != nil {
-		c.Logger.WriteLog(err.Error())
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	img, err := c.ReqImg(ctx, url)
 	if err != nil {
 		c.Logger.WriteLog(err.Error())
 	}
 
-	if err = createFile(body, pagePath); err != nil {
+	if err = createFile(img, pagePath); err != nil {
 		c.Logger.WriteLog(err.Error())
 	}
 }

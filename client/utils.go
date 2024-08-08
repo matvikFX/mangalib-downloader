@@ -70,6 +70,26 @@ func (c *MangaLibClient) createFolder(rusName, branchTeams, volume, number, name
 	return nil
 }
 
+func (c *MangaLibClient) ChangePath(path string) {
+	if isValidPath(path) {
+		c.DownloadPath = path
+	} else {
+		DefaultDownloadPath()
+	}
+}
+
+func isValidPath(path string) bool {
+	if filepath.IsAbs(path) {
+		return true
+	}
+
+	if _, err := filepath.Abs(path); err == nil {
+		return true
+	}
+
+	return false
+}
+
 func DefaultDownloadPath() string {
 	var path string
 	switch runtime.GOOS {

@@ -86,8 +86,8 @@ func (c *MangaLibClient) GetChapters(ctx context.Context, slug string) (models.C
 		return nil, err
 	}
 
-	chapList := make(models.ChapterList, 0)
 	if c.Branch != 0 {
+		chapList := make(models.ChapterList, 0)
 		for _, chap := range chapters.Data {
 			for _, br := range chap.Branches {
 				if br.BranchID == c.Branch {

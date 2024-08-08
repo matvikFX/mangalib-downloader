@@ -182,8 +182,7 @@ func (p *MangaPage) downloadSelected(ctx context.Context) {
 		chaps = append(chaps, chap)
 	}
 
-	core.App.Client.DownloadChapters(ctx,
-		selectedManga.ID, selectedManga.Slug, selectedManga.RusName, chaps)
+	core.App.Client.DownloadChapters(ctx, selectedManga.Manga, chaps)
 
 	<-core.App.Client.Downloaded
 	ShowModal(utils.DownloadSuccessID,

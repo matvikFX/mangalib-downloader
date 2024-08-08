@@ -32,7 +32,8 @@ func (a *MangaApp) LoadConfig() {
 
 	file, err := os.ReadFile(cfgFile)
 	if err != nil {
-		log.Println("can not open config file")
+		log.Println("can't open config file")
+		return
 	}
 
 	paths := strings.Split(string(file), "\n")
@@ -48,6 +49,7 @@ func (a *MangaApp) SaveConfig() {
 		a.Client.DownloadPath, a.Client.Logger.Path)
 
 	if err := os.WriteFile(cfgFile, []byte(text), os.ModePerm); err != nil {
+		log.Println("can't save config file")
 		return
 	}
 }
