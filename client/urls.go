@@ -81,7 +81,7 @@ func (c *MangaLibClient) createChaptersURL(slug string) string {
 }
 
 func (c *MangaLibClient) createPageURL(image string) string {
-	return SecondURL + image
+	return CompressedURL + image
 }
 
 func (c *MangaLibClient) createBranchesURL(id int) string {
