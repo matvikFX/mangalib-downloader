@@ -4,19 +4,13 @@ import (
 	"context"
 	"time"
 
+	"manga-downloader/api"
 	"manga-downloader/components/utils"
 	"manga-downloader/models"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
-
-type Pages interface {
-	SetFocus(p tview.Primitive)
-	AddAndSwitchToPage(id string, item tview.Primitive, resize bool)
-	ChangePath(path string)
-	ChangePage(d_page int)
-}
 
 var (
 	timer *time.Timer
@@ -63,20 +57,20 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 
 		switch event.Key() {
 		case tcell.KeyEscape: // Обнулить поисковую строку и вернуться на первую страницу
-			if p.app.Downloader.Query != "" || p.app.Downloader.Page != 1 {
-				p.app.Downloader.Query = ""
-				p.app.Downloader.Page = 1
+			if p.app.query != "" || p.app.page != 1 {
+				p.app.query = ""
+				p.app.page = 1
 				reload()
 			}
 		case tcell.KeyCtrlF: // Предыдущая страница
-			p.app.Downloader.Page++
+			p.app.page++
 			reload()
 		case tcell.KeyCtrlB: // Следующая страница
-			if p.app.Downloader.Page == 1 {
+			if p.app.page == 1 {
 				p.app.ShowModal(utils.NoMangaID, "Ниже первой страницы опуститься нельзя")
 				break
 			}
-			p.app.Downloader.Page--
+			p.app.page--
 			reload()
 		}
 		return event
@@ -102,12 +96,12 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 			timer.Stop()
 		}
 		timer = time.AfterFunc(800*time.Millisecond, func() {
-			info, err := p.app.Downloader.GetInfo(ctx, manga.Slug)
+			info, err := api.GetInfo(ctx, manga.Slug, p.app.branchID)
 			if err != nil {
 				p.app.Logger.Write(err.Error())
 				return
 			}
-			branches, err := p.app.Downloader.GetMangaBranches(ctx, selectedManga.ID)
+			branches, err := api.GetMangaBranches(ctx, selectedManga.ID)
 			if err != nil {
 				p.app.Logger.Write(err.Error())
 				return
@@ -150,19 +144,19 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 
 		switch event.Key() {
 		case tcell.KeyEscape: // Выход со страницы манги
-			p.app.Downloader.Branch = 0
+			p.app.branchID = 0
 			timer.Reset(1 * time.Second)
 			p.app.Pages.RemovePage(utils.MangaPageID)
 			cancel()
 		case tcell.KeyCtrlD: // Скачивание выделенных
 			if len(p.selected) != 0 {
-				go p.downloadSelected(ctx)
+				go p.downloadSelected(ctx, p.app.branchID)
 			}
 		case tcell.KeyCtrlA: // Скачивание всех глав
 			go func() {
-				p.app.Downloader.DownloadManga(ctx, selectedManga)
+				p.downloader.DownloadManga(ctx, selectedManga, p.app.branchID)
 
-				<-p.app.Downloader.Downloaded
+				<-p.downloader.Downloaded
 				p.app.ShowModal(utils.DownloadSuccessID,
 					"Манга '"+selectedManga.RusName+"' успешно скачана")
 
@@ -193,8 +187,8 @@ func (p *SearchModal) setHandlers() {
 		case tcell.KeyEnter:
 			searchInput := p.form.GetFormItemByLabel(utils.SearchModalLabel).(*tview.InputField)
 			formText := searchInput.GetText()
-			p.app.Downloader.Query = formText
-			p.app.Downloader.Page = 1
+			p.app.query = formText
+			p.app.page = 1
 
 			searchInput.SetText("")
 			p.app.Pages.RemovePage(utils.SearchModalID)

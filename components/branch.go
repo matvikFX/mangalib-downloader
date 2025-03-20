@@ -3,6 +3,7 @@ package components
 import (
 	"context"
 
+	"manga-downloader/api"
 	"manga-downloader/components/utils"
 
 	"github.com/gdamore/tcell/v2"
@@ -16,7 +17,7 @@ func (a *TViewApp) ShowBranchModal(ctx context.Context) {
 			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
 
-	branches, err := a.Downloader.GetMangaBranches(ctx, selectedManga.ID)
+	branches, err := api.GetMangaBranches(ctx, selectedManga.ID)
 	if err != nil {
 		a.Logger.Write(err.Error())
 		return
@@ -43,7 +44,7 @@ func (a *TViewApp) newBranchForm(ctx context.Context, teamsBranch map[int]string
 
 	for branch, team := range teamsBranch {
 		dropDown.AddOption(team, func() {
-			a.Downloader.Branch = branch
+			a.branchID = branch
 		})
 	}
 

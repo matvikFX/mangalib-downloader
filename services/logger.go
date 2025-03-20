@@ -23,10 +23,10 @@ func NewLogger() *Logger {
 func (l *Logger) Write(logStruct any) {
 	localtime := time.Now().Local()
 
-	// if err := os.MkdirAll(l.Path, 0o644); err != nil {
-	// 	log.Println("Error creating log folder: ", err)
-	// 	return
-	// }
+	if err := os.MkdirAll(l.Path, 0o750); err != nil {
+		log.Println("Error creating log folder: ", err)
+		return
+	}
 
 	fileName := localtime.Format(time.DateOnly) + ".json"
 	filePath := filepath.Join(l.Path, fileName)
@@ -37,8 +37,16 @@ func (l *Logger) Write(logStruct any) {
 		return
 	}
 
-	if err := os.WriteFile(filePath, jsonLog, 0o644); err != nil {
-		log.Println("Error to marshal struct: ", err)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o640)
+	if err != nil {
+		log.Println("Error to open log file: ", err)
+		return
+	}
+	defer file.Close()
+
+	_, err = file.Write(jsonLog)
+	if err != nil {
+		log.Println("Error writing into file: ", err)
 		return
 	}
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -27,7 +28,7 @@ func NewBookmarks() *Bookmarks {
 }
 
 func (b *Bookmarks) Save() error {
-	// if err := os.MkdirAll(b.Path, 0o644); err != nil {
+	// if err := os.MkdirAll(b.Path, 0o640); err != nil {
 	// 	return err
 	// }
 
@@ -36,17 +37,23 @@ func (b *Bookmarks) Save() error {
 		return err
 	}
 
-	if err := os.WriteFile(b.Path, content, 0o644); err != nil {
+	if err := os.WriteFile(b.Path, content, 0o640); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (b *Bookmarks) Load() error {
-	content, err := os.ReadFile(b.Path)
+func (b *Bookmarks) Load(path string) error {
+	content, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		log.Println("Bookmarks file does not exists. Creating...")
+		if _, err := os.Create(path); err != nil {
+			log.Println("Error creating bookmarks file: ", err)
+			return err
+		}
+
+		return nil
 	}
 
 	if err = yaml.Unmarshal(content, &b.List); err != nil {

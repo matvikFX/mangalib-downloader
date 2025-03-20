@@ -78,7 +78,7 @@ func createFolder(downloadPath, rusName, branchTeams, volume, number, name strin
 
 	chapPath := CreateChapterPath(downloadPath, branchTeams, rusName, volume, number, name)
 
-	if err := os.MkdirAll(chapPath, 0o755); err != nil {
+	if err := os.MkdirAll(chapPath, 0o644); err != nil {
 		return err
 	}
 

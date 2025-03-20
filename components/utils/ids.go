@@ -14,10 +14,12 @@ const (
 	PathsModalID  = "paths_modal"
 
 	// Error modals
-	NoMangaID    = "manga_not_found"
-	NoBranchesID = "no_branches"
-	NoChaptersID = "chapters_not_found"
-	FirstPageID  = "first_page"
+	NoMangaID        = "manga_not_found"
+	NoBranchesID     = "no_branches"
+	NoChaptersID     = "chapters_not_found"
+	FirstPageID      = "first_page"
+	LoggerPathID     = "logger_path"
+	DownloaderPathID = "downloader_path"
 
 	// Download modals
 	DownloadSuccessID = "downloaded_successfully"

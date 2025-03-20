@@ -39,11 +39,13 @@ func (p *PathModal) setForm() {
 	}
 
 	dInput := tview.NewInputField()
-	dInput.SetLabel(utils.PathDownloadLabel).SetText(p.app.Downloader.Path)
+	dInput.SetLabel(utils.PathDownloadLabel).
+		SetText(p.app.Config.DownloadPath)
 	dInput.SetAutocompleteFunc(getMatches)
 
 	lInput := tview.NewInputField()
-	lInput.SetLabel(utils.PathLogsLabel).SetText(p.app.Logger.Path)
+	lInput.SetLabel(utils.PathLogsLabel).
+		SetText(p.app.Logger.Path)
 	lInput.SetAutocompleteFunc(getMatches)
 
 	form := tview.NewForm()
@@ -51,15 +53,20 @@ func (p *PathModal) setForm() {
 	form.SetButtonsAlign(tview.AlignCenter)
 	form.AddFormItem(dInput).AddFormItem(lInput).
 		AddButton("OK", func() {
-			downloadPath := dInput.GetText()
-			logPath := lInput.GetText()
+			// downloadPath := dInput.GetText()
+			// logPath := lInput.GetText()
 
-			p.app.Downloader.ChangePath(downloadPath)
-			p.app.Downloader.Path = downloadPath
-			p.app.Logger.Path = logPath
+			// if msg := p.app.Config.ChangePath(downloadPath); msg != "" {
+			// 	// Show error message
+			// 	p.app.ShowModal(utils.DownloaderPathID, msg)
+			// }
+			//
+			// if msg := p.app.Config.ChangePath(logPath); msg != "" {
+			// 	// Show error message
+			// 	p.app.ShowModal(utils.LoggerPathID, msg)
+			// }
 
 			p.app.Config.Save()
-
 			p.app.Pages.RemovePage(utils.PathsModalID)
 		}).
 		AddButton("Default", func() {

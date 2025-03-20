@@ -80,7 +80,7 @@ func (c *MangaLibDownloader) DownloadChapter(ctx context.Context,
 		return
 	}
 
-	if err = os.MkdirAll(chapPath, 0o755); err != nil {
+	if err = os.MkdirAll(chapPath, 0o644); err != nil {
 		c.Logger.Write(err.Error())
 		return
 	}
@@ -125,7 +125,7 @@ func (c *MangaLibDownloader) downloader(ctx context.Context,
 			chapPath := CreateChapterPath(c.DownloadPath, teams, manga.RusName,
 				chap.Volume, chap.Number, chap.Name)
 
-			if err := os.MkdirAll(chapPath, 0o755); err != nil {
+			if err := os.MkdirAll(chapPath, 0o644); err != nil {
 				c.Logger.Write(err.Error())
 			}
 

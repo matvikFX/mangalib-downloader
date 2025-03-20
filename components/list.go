@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"manga-downloader/api"
 	"manga-downloader/components/utils"
 	"manga-downloader/models"
 
@@ -61,7 +62,7 @@ func (p *ListPage) setListTable() {
 	p.setHandlers(ctx, cancel)
 
 	tableTitle := "Популярная манга"
-	if p.app.Downloader.Query != "" {
+	if p.app.query != "" {
 		tableTitle = "Результаты поиска"
 	}
 
@@ -69,7 +70,7 @@ func (p *ListPage) setListTable() {
 		p.table.SetTitle(fmt.Sprintf("%s. Загрузка...", tableTitle))
 	})
 
-	data, err := p.app.Downloader.GetData(ctx)
+	data, err := api.GetData(ctx, p.app.query, p.app.page)
 	if err != nil {
 		p.app.Logger.Write(err.Error())
 		return
@@ -80,10 +81,10 @@ func (p *ListPage) setListTable() {
 
 	if meta.From == 0 {
 		p.app.ShowModal(utils.NoMangaID, "Манга не найдена")
-		if p.app.Downloader.Page == 1 {
-			p.app.Downloader.Query = ""
+		if p.app.page == 1 {
+			p.app.query = ""
 		} else {
-			p.app.Downloader.Page--
+			p.app.page--
 		}
 		go p.setListTable()
 		return
