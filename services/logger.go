@@ -42,3 +42,15 @@ func (l *Logger) Write(logStruct any) {
 		return
 	}
 }
+
+func (l *Logger) ChangePath(path string) string {
+	if !IsPathValid(path) {
+		l.Path = DefaultPath(DefaultLoggerPath)
+
+		log.Println("Error: invalid path. Setting logger path to default")
+		return "Invalid path. Setting logger path to default"
+	} else {
+		l.Path = path
+	}
+	return ""
+}

@@ -1,7 +1,6 @@
 package downloader
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,22 +9,38 @@ import (
 	"strings"
 )
 
-func (c *MangaLibDownloader) GetBranchTeams(ctx context.Context, branchID int) string {
-	branchTeams := make(map[int]string)
-	if c.Branch != 0 {
-		branches, err := c.GetMangaBranches(ctx, branchID)
-		if err != nil {
-			c.Logger.Write(err.Error())
-		}
+func (c *MangaLibDownloader) ChangePath(path string) string {
+	if !isValidPath(path) {
+		c.DownloadPath = DefaultDownloadPath()
 
-		branchTeams = branches.BranchTeams()
+		c.Logger.Write("Error: invalid path. Setting path to default")
+		return "Invalid path. Setting path to default"
 	}
 
-	return branchTeams[c.Branch]
+	c.DownloadPath = path
+	return ""
 }
 
+// Находится в API
+// func (c *MangaLibDownloader) GetBranchTeams(ctx context.Context, branchID int) string {
+// 	branchTeams := make(map[int]string)
+// 	if branchID != 0 {
+// 		branches, err := api.GetMangaBranches(ctx, branchID)
+// 		if err != nil {
+// 			c.Logger.Write(err.Error())
+// 		}
+//
+// 		branchTeams = branches.BranchTeams()
+// 	}
+//
+// 	return branchTeams[branchID]
+// }
+
 // teams необязательно указывать
-func (c *MangaLibDownloader) CreateChapterPath(teams, mangaName string, volume, number, chapName string) string {
+func CreateChapterPath(
+	downloadPath string,
+	teams, mangaName string, volume, number, chapName string,
+) string {
 	mangaName = removeChars(mangaName)
 	teams = removeChars(teams)
 	chapName = removeChars(chapName)
@@ -40,15 +55,15 @@ func (c *MangaLibDownloader) CreateChapterPath(teams, mangaName string, volume, 
 
 	var chapterPath string
 	if teams == "" {
-		chapterPath = filepath.Join(c.Path, mangaName, chapDir)
+		chapterPath = filepath.Join(downloadPath, mangaName, chapDir)
 	} else {
-		chapterPath = filepath.Join(c.Path, mangaName, teams, chapDir)
+		chapterPath = filepath.Join(downloadPath, mangaName, teams, chapDir)
 	}
 
 	return chapterPath
 }
 
-func (c *MangaLibDownloader) CheckExistence(filePath string) bool {
+func CheckExistence(filePath string) bool {
 	var exists bool
 
 	if _, err := os.Stat(filePath); !os.IsNotExist(err) {
@@ -58,24 +73,16 @@ func (c *MangaLibDownloader) CheckExistence(filePath string) bool {
 	return exists
 }
 
-func (c *MangaLibDownloader) createFolder(rusName, branchTeams, volume, number, name string) error {
+func createFolder(downloadPath, rusName, branchTeams, volume, number, name string) error {
 	rusName = removeChars(rusName)
 
-	chapPath := c.CreateChapterPath(branchTeams, rusName, volume, number, name)
+	chapPath := CreateChapterPath(downloadPath, branchTeams, rusName, volume, number, name)
 
 	if err := os.MkdirAll(chapPath, 0o755); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (c *MangaLibDownloader) ChangePath(path string) {
-	if isValidPath(path) {
-		c.Path = path
-	} else {
-		DefaultDownloadPath()
-	}
 }
 
 func isValidPath(path string) bool {
@@ -116,6 +123,18 @@ func createFile(data []byte, pagePath string) error {
 	}
 
 	return nil
+}
+
+func createPageURL(image string) string {
+	// Download URLs
+	const (
+		FirstURL      = "https://img2.mixlib.me"
+		SecondURL     = "https://img4.imgslib.link"   // Работает
+		CompressedURL = "https://img33.imgslib.link/" // Работает
+		DownloadURL   = "https://img4.imgslib.org"
+	)
+
+	return CompressedURL + image
 }
 
 func createPageName(pageSlug int, pageImg string) string {

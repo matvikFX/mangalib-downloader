@@ -1,4 +1,4 @@
-package downloader
+package api
 
 import (
 	"context"
@@ -6,42 +6,15 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/http/cookiejar"
 	"path/filepath"
 
 	"manga-downloader/services"
 )
 
-type MangaLibDownloader struct {
-	client *http.Client
-	Logger *services.Logger
+var logger = services.NewLogger()
 
-	Downloaded chan struct{}
-	Path       string
-
-	Page   int
-	Query  string
-	Branch int
-}
-
-func NewClient() *MangaLibDownloader {
-	jar, _ := cookiejar.New(nil)
-	client := &http.Client{Jar: jar}
-
-	return &MangaLibDownloader{
-		Logger: services.NewLogger(),
-		client: client,
-
-		Downloaded: make(chan struct{}, 1),
-		Path:       DefaultDownloadPath(),
-
-		Page:  1,
-		Query: "",
-	}
-}
-
-func (c *MangaLibDownloader) ReqImg(ctx context.Context, url string) ([]byte, error) {
-	resp, err := c.req(ctx, url)
+func ReqImg(ctx context.Context, url string) ([]byte, error) {
+	resp, err := req(ctx, url)
 	if err != nil {
 		log.Println("Error getting response")
 		return nil, err
@@ -50,14 +23,15 @@ func (c *MangaLibDownloader) ReqImg(ctx context.Context, url string) ([]byte, er
 
 	img, err := io.ReadAll(resp.Body)
 	if err != nil {
-		c.Logger.Write(err.Error())
+		log.Println("Error reading image")
+		return nil, err
 	}
 
 	return img, nil
 }
 
-func (c *MangaLibDownloader) ReqAndDecode(ctx context.Context, url string, data any) error {
-	resp, err := c.req(ctx, url)
+func ReqJSON(ctx context.Context, url string, data any) error {
+	resp, err := req(ctx, url)
 	if err != nil {
 		log.Println("Error getting response")
 		return err
@@ -72,7 +46,7 @@ func (c *MangaLibDownloader) ReqAndDecode(ctx context.Context, url string, data 
 	return nil
 }
 
-func (c *MangaLibDownloader) req(ctx context.Context, url string) (*http.Response, error) {
+func req(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		log.Println("Error creating request with context")

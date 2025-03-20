@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -19,17 +18,7 @@ func DefaultPath(service string) string {
 	return path
 }
 
-func ChangePath(path string) (string, error) {
-	var newPath string
-	if isPathValid(path) {
-		newPath = path
-	} else {
-		return "", errors.New("invalid path")
-	}
-	return newPath, nil
-}
-
-func isPathValid(path string) bool {
+func IsPathValid(path string) bool {
 	if filepath.IsAbs(path) {
 		return true
 	}

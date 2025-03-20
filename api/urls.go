@@ -1,4 +1,4 @@
-package downloader
+package api
 
 import (
 	"net/url"
@@ -28,14 +28,14 @@ const (
 	// targer_id="TeamID"&targer_model=team
 )
 
-func (c *MangaLibDownloader) createSearchURL(name string) string {
+func createSearchURL(name string, page int) string {
 	queryParams := url.Values{}
 	queryParams.Add("fields[]", "rate_avg")
 	queryParams.Add("fields[]", "rate")
 	queryParams.Add("fields[]", "releaseDate")
 	queryParams.Add("site_id[]", "1")
 	queryParams.Add("q", name)
-	queryParams.Add("page", strconv.Itoa(c.Page))
+	queryParams.Add("page", strconv.Itoa(page))
 
 	baseURL, _ := url.Parse(MangaLibURL)
 	baseURL.RawQuery = queryParams.Encode()
@@ -43,13 +43,13 @@ func (c *MangaLibDownloader) createSearchURL(name string) string {
 	return baseURL.String()
 }
 
-func (c *MangaLibDownloader) createListURL() string {
+func createListURL(page int) string {
 	queryParams := url.Values{}
 	queryParams.Add("fields[]", "rate_avg")
 	queryParams.Add("fields[]", "rate")
 	queryParams.Add("fields[]", "releaseDate")
 	queryParams.Add("site_id[]", "1")
-	queryParams.Add("page", strconv.Itoa(c.Page))
+	queryParams.Add("page", strconv.Itoa(page))
 
 	baseURL, _ := url.Parse(MangaLibURL)
 	baseURL.RawQuery = queryParams.Encode()
@@ -57,7 +57,7 @@ func (c *MangaLibDownloader) createListURL() string {
 	return baseURL.String()
 }
 
-func (c *MangaLibDownloader) createInfoURL(slug string) string {
+func createInfoURL(slug string, branchID int) string {
 	queryParams := url.Values{}
 	queryParams.Add("fields[]", "summary")
 	queryParams.Add("fields[]", "releaseDate")
@@ -68,7 +68,7 @@ func (c *MangaLibDownloader) createInfoURL(slug string) string {
 	queryParams.Add("fields[]", "chap_count")
 	queryParams.Add("fields[]", "authors")
 	queryParams.Add("fields[]", "status_id")
-	queryParams.Add("branch", strconv.Itoa(c.Branch))
+	queryParams.Add("branch", strconv.Itoa(branchID))
 
 	baseURL, _ := url.Parse(MangaLibURL + slug)
 	baseURL.RawQuery = queryParams.Encode()
@@ -76,27 +76,29 @@ func (c *MangaLibDownloader) createInfoURL(slug string) string {
 	return baseURL.String()
 }
 
-func (c *MangaLibDownloader) createChaptersURL(slug string) string {
+func createChaptersURL(slug string) string {
 	return MangaLibURL + slug + "/chapters"
 }
 
-func (c *MangaLibDownloader) createPageURL(image string) string {
+func createPageURL(image string) string {
 	return CompressedURL + image
 }
 
-func (c *MangaLibDownloader) createBranchesURL(id int) string {
+func createBranchesURL(id int) string {
 	return BranchesURL + strconv.Itoa(id)
 }
 
-func (c *MangaLibDownloader) createChapterURL(slug string, number, volume string) string {
+func createChapterURL(
+	slug string, number, volume string, branchID int,
+) string {
 	queryParams := url.Values{}
-	if c.Branch != 0 {
-		queryParams.Add("branch_id", strconv.Itoa(c.Branch))
+	if branchID != 0 {
+		queryParams.Add("branch_id", strconv.Itoa(branchID))
 	}
 	queryParams.Add("number", number)
 	queryParams.Add("volume", volume)
 
-	chapters := c.createChaptersURL(slug)
+	chapters := createChaptersURL(slug)
 	chapter := chapters[:len(chapters)-1]
 	baseURL, _ := url.Parse(chapter)
 	baseURL.RawQuery = queryParams.Encode()
