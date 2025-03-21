@@ -1,7 +1,7 @@
 package services
 
 import (
-	"log"
+	"log/slog"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -16,28 +16,32 @@ type title struct {
 }
 
 type Bookmarks struct {
+	logger *slog.Logger
+
 	Path string
 	List map[string][]title
 }
 
-func NewBookmarks() *Bookmarks {
+func NewBookmarks(logger *slog.Logger) *Bookmarks {
 	return &Bookmarks{
+		logger: logger,
+
 		Path: DefaultPath(DefaultBookmarksPath),
 		List: make(map[string][]title),
 	}
 }
 
 func (b *Bookmarks) Save() error {
-	// if err := os.MkdirAll(b.Path, 0o640); err != nil {
-	// 	return err
-	// }
+	log := b.logger.With("Bookmarks", "Save")
 
 	content, err := yaml.Marshal(b.List)
 	if err != nil {
+		log.Error("Error marshaling bookmarks", "Error", err)
 		return err
 	}
 
 	if err := os.WriteFile(b.Path, content, 0o640); err != nil {
+		log.Error("Error creating bookmarks file", "Error", err)
 		return err
 	}
 
@@ -45,11 +49,13 @@ func (b *Bookmarks) Save() error {
 }
 
 func (b *Bookmarks) Load(path string) error {
+	log := b.logger.With("Bookmarks", "Save")
+
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Println("Bookmarks file does not exists. Creating...")
+		log.Warn("Bookmarks file does not exists. Creating...")
 		if _, err := os.Create(path); err != nil {
-			log.Println("Error creating bookmarks file: ", err)
+			log.Error("Error creating bookmarks file", "Error", err)
 			return err
 		}
 
@@ -57,6 +63,7 @@ func (b *Bookmarks) Load(path string) error {
 	}
 
 	if err = yaml.Unmarshal(content, &b.List); err != nil {
+		log.Error("Error unmarshaling bookmarks", "Error", err)
 		return err
 	}
 

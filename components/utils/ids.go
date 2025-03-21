@@ -20,6 +20,7 @@ const (
 	FirstPageID      = "first_page"
 	LoggerPathID     = "logger_path"
 	DownloaderPathID = "downloader_path"
+	BookmarksPathID  = "bookmarks_path"
 
 	// Download modals
 	DownloadSuccessID = "downloaded_successfully"
@@ -31,6 +32,7 @@ const (
 	SearchModalLabel = "Название"
 	BranchModalLabel = "Переводчики"
 
-	PathDownloadLabel = "Путь папки скачанной манги"
-	PathLogsLabel     = "Путь папки файлов логов"
+	PathDownloadLabel  = "Путь папки скачанной манги"
+	PathLogsLabel      = "Путь папки файлов логов"
+	PathBookmarksLabel = "Путь файла закладок"
 )

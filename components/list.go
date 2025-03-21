@@ -72,7 +72,7 @@ func (p *ListPage) setListTable() {
 
 	data, err := api.GetData(ctx, p.app.query, p.app.page)
 	if err != nil {
-		p.app.Logger.Write(err.Error())
+		p.app.Logger.Error(err.Error())
 		return
 	}
 

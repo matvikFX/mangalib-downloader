@@ -1,29 +1,37 @@
 package components
 
 import (
+	"log/slog"
+
+	"manga-downloader/models"
 	"manga-downloader/services"
 
 	"github.com/rivo/tview"
 )
 
 type TViewApp struct {
+	Logger    *slog.Logger
 	Config    *services.Config
 	Bookmarks *services.Bookmarks
-	Logger    *services.Logger
 
 	App   *tview.Application
 	Pages *tview.Pages
 
-	query    string
-	page     int
-	branchID int
+	query         string
+	page          int
+	branchID      int
+	selectedManga *models.MangaInfo
 }
 
-func NewTViewApp() *TViewApp {
+func NewTViewApp(
+	logger *slog.Logger,
+	cfg *services.Config,
+	bookmarks *services.Bookmarks,
+) *TViewApp {
 	return &TViewApp{
-		Config:    services.NewConfig(),
-		Bookmarks: services.NewBookmarks(),
-		Logger:    services.NewLogger(),
+		Logger:    logger,
+		Config:    cfg,
+		Bookmarks: bookmarks,
 
 		App:   tview.NewApplication(),
 		Pages: tview.NewPages(),
@@ -34,18 +42,24 @@ func NewTViewApp() *TViewApp {
 	}
 }
 
-func (a *TViewApp) Start() {
+func (a *TViewApp) Start() error {
+	log := a.Logger.With("TViewApp", "Start")
+
 	if err := a.Bookmarks.Load(a.Config.BookmarksPath); err != nil {
-		a.Logger.Write("No bookmarks file detected")
+		log.Error("No bookmarks file detected", "Error", err)
+		return err
 	}
+	log.Debug("Bookmarks loaded", "Bookmarks", a.Bookmarks)
 
 	a.ShowListPage()
-	a.SetHandlers()
+	a.setHandlers()
 
 	if err := a.App.SetRoot(a.Pages, true).Run(); err != nil {
-		// panic(err)
-		a.Logger.Write(err)
+		log.Error("Error running application", "Error", err)
+		return err
 	}
+
+	return nil
 }
 
 func (a *TViewApp) Stop() {

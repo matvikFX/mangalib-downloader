@@ -3,46 +3,37 @@ package components
 import (
 	"context"
 
-	"manga-downloader/api"
 	"manga-downloader/components/utils"
+	"manga-downloader/models"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-func (a *TViewApp) ShowBranchModal(ctx context.Context) {
+func (a *TViewApp) ShowBranchModal(
+	ctx context.Context, slug string, branches models.BranchList,
+) {
 	modal := func(p tview.Primitive, width, height int) tview.Primitive {
 		return tview.NewGrid().
 			SetColumns(0, width, 0).SetRows(0, height, 0).
 			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
 
-	branches, err := api.GetMangaBranches(ctx, selectedManga.ID)
-	if err != nil {
-		a.Logger.Write(err.Error())
-		return
-	}
-
-	if len(branches) == 0 {
-		a.ShowMangaPage(ctx)
-		return
-	}
-
-	selectedManga.Branches = branches
-	teamsBranch := branches.BranchTeams()
-	form := a.newBranchForm(ctx, teamsBranch)
+	form := a.newBranchForm(ctx, slug, branches)
 
 	a.App.SetFocus(form)
 	a.Pages.AddPage(utils.BranchModalID, modal(form, 50, 5), true, true)
 }
 
-func (a *TViewApp) newBranchForm(ctx context.Context, teamsBranch map[int]string) *tview.Form {
+func (a *TViewApp) newBranchForm(
+	ctx context.Context, slug string, branches models.BranchList,
+) *tview.Form {
 	form := tview.NewForm()
 	form.SetTitle("Выбор ветки переводчиков").SetBorder(true)
 
 	dropDown := tview.NewDropDown().SetLabel(utils.BranchModalLabel)
 
-	for branch, team := range teamsBranch {
+	for branch, team := range branches.BranchTeams() {
 		dropDown.AddOption(team, func() {
 			a.branchID = branch
 		})
@@ -56,7 +47,7 @@ func (a *TViewApp) newBranchForm(ctx context.Context, teamsBranch map[int]string
 		case tcell.KeyEscape:
 			a.Pages.RemovePage(utils.BranchModalID)
 		case tcell.KeyEnter:
-			a.ShowMangaPage(ctx)
+			a.ShowMangaPage(ctx, slug, a.branchID)
 			a.Pages.RemovePage(utils.BranchModalID)
 		}
 		return event

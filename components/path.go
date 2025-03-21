@@ -1,6 +1,7 @@
 package components
 
 import (
+	"log/slog"
 	"path/filepath"
 	"strings"
 
@@ -17,26 +18,36 @@ type PathModal struct {
 }
 
 func (a *TViewApp) ShowPathModal() {
-	pathsModal := newPathModal()
+	pathsModal := newPathModal(a)
 	pathsModal.setHandlers()
 
 	a.App.SetFocus(pathsModal.form)
 	a.Pages.AddPage(utils.PathsModalID, pathsModal.modal, true, true)
 }
 
-func newPathModal() *PathModal {
-	pathModal := &PathModal{}
+func newPathModal(app *TViewApp) *PathModal {
+	pathModal := &PathModal{
+		app: app,
+	}
 	pathModal.setForm()
 
 	return pathModal
 }
 
 func (p *PathModal) setForm() {
+	log := p.app.Logger.With("PathModal", "setForm")
+
 	modal := func(p tview.Primitive, width, height int) tview.Primitive {
 		return tview.NewGrid().
 			SetColumns(0, width, 0).SetRows(0, height, 0).
 			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
+
+	log.Debug("Variables", slog.Group("Paths",
+		"DownloadPath", p.app.Config.DownloadPath,
+		"LoggerPath", p.app.Config.LoggerPath,
+		"BookmarksPath", p.app.Config.BookmarksPath,
+	))
 
 	dInput := tview.NewInputField()
 	dInput.SetLabel(utils.PathDownloadLabel).
@@ -45,26 +56,37 @@ func (p *PathModal) setForm() {
 
 	lInput := tview.NewInputField()
 	lInput.SetLabel(utils.PathLogsLabel).
-		SetText(p.app.Logger.Path)
+		SetText(p.app.Config.LoggerPath)
 	lInput.SetAutocompleteFunc(getMatches)
+
+	bInput := tview.NewInputField()
+	bInput.SetLabel(utils.PathBookmarksLabel).
+		SetText(p.app.Config.BookmarksPath)
+	bInput.SetAutocompleteFunc(getMatches)
 
 	form := tview.NewForm()
 	form.SetBorder(true).SetTitle("Установить пути")
 	form.SetButtonsAlign(tview.AlignCenter)
-	form.AddFormItem(dInput).AddFormItem(lInput).
+	form.AddFormItem(dInput).AddFormItem(lInput).AddFormItem(bInput).
 		AddButton("OK", func() {
-			// downloadPath := dInput.GetText()
-			// logPath := lInput.GetText()
+			downloadPath := dInput.GetText()
+			logPath := lInput.GetText()
+			bookmarksPath := bInput.GetText()
 
-			// if msg := p.app.Config.ChangePath(downloadPath); msg != "" {
-			// 	// Show error message
-			// 	p.app.ShowModal(utils.DownloaderPathID, msg)
-			// }
-			//
-			// if msg := p.app.Config.ChangePath(logPath); msg != "" {
-			// 	// Show error message
-			// 	p.app.ShowModal(utils.LoggerPathID, msg)
-			// }
+			if msg := p.app.Config.ChangeDownloadPath(downloadPath); msg != "" {
+				// Show error message
+				p.app.ShowModal(utils.DownloaderPathID, msg)
+			}
+
+			if msg := p.app.Config.ChangeLogPath(logPath); msg != "" {
+				// Show error message
+				p.app.ShowModal(utils.LoggerPathID, msg)
+			}
+
+			if msg := p.app.Config.ChangeBookmarkPath(bookmarksPath); msg != "" {
+				// Show error message
+				p.app.ShowModal(utils.BookmarksPathID, msg)
+			}
 
 			p.app.Config.Save()
 			p.app.Pages.RemovePage(utils.PathsModalID)
@@ -75,10 +97,14 @@ func (p *PathModal) setForm() {
 		}).
 		AddButton("Cancel", func() {
 			p.app.Pages.RemovePage(utils.PathsModalID)
+		}).
+		AddCheckbox("cbz format", true, func(checked bool) {
+			p.app.Config.CbzFormat = checked
 		})
 
 	p.form = form
-	p.modal = modal(form, 100, 9)
+	// old value: 9
+	p.modal = modal(form, 100, 13)
 }
 
 func getMatches(currentText string) (entries []string) {
