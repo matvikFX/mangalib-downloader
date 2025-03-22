@@ -1,26 +1,29 @@
 package components
 
 import (
+	"context"
+
 	"mangalib-downloader/components/utils"
-	"mangalib-downloader/core"
 
 	"github.com/rivo/tview"
 )
 
 type SearchModal struct {
+	app *TViewApp
+
 	form  *tview.Form
 	modal tview.Primitive
 }
 
-func ShowSearchModal() {
-	searchModal := newSearchModal()
-	searchModal.setHandlers()
+func (a *TViewApp) ShowSearchModal() {
+	searchModal := newSearchModal(a)
+	searchModal.setHandlers(context.TODO())
 
-	core.App.TView.SetFocus(searchModal.form)
-	core.App.PageHolder.AddPage(utils.SearchModalID, searchModal.modal, true, true)
+	a.App.SetFocus(searchModal.form)
+	a.Pages.AddPage(utils.SearchModalID, searchModal.modal, true, true)
 }
 
-func newSearchModal() *SearchModal {
+func newSearchModal(app *TViewApp) *SearchModal {
 	modal := func(p tview.Primitive, width, height int) tview.Primitive {
 		return tview.NewGrid().
 			SetColumns(0, width, 0).SetRows(0, height, 0).
@@ -29,6 +32,8 @@ func newSearchModal() *SearchModal {
 
 	form := newSearchForm()
 	return &SearchModal{
+		app: app,
+
 		form:  form,
 		modal: modal(form, 100, 5),
 	}

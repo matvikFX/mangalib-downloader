@@ -5,7 +5,7 @@ type Page struct {
 	Image string `json:"image"`
 
 	// Номер страницы
-	Slug int `json:"slug"`
+	Number int `json:"slug"`
 
 	Height int `json:"height"`
 	Width  int `json:"width"`

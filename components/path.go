@@ -1,35 +1,31 @@
 package components
 
 import (
-	"path/filepath"
-	"strings"
-
+	"log/slog"
 	"mangalib-downloader/components/utils"
-	"mangalib-downloader/core"
+	"mangalib-downloader/services"
 
 	"github.com/rivo/tview"
 )
 
 type PathModal struct {
-	DownloadPath string
-	LogsPath     string
+	app *TViewApp
 
 	form  *tview.Form
 	modal tview.Primitive
 }
 
-func ShowPathModal() {
-	pathsModal := newPathModal()
+func (a *TViewApp) ShowPathModal() {
+	pathsModal := newPathModal(a)
 	pathsModal.setHandlers()
 
-	core.App.TView.SetFocus(pathsModal.form)
-	core.App.PageHolder.AddPage(utils.PathsModalID, pathsModal.modal, true, true)
+	a.App.SetFocus(pathsModal.form)
+	a.Pages.AddPage(utils.PathsModalID, pathsModal.modal, true, true)
 }
 
-func newPathModal() *PathModal {
+func newPathModal(app *TViewApp) *PathModal {
 	pathModal := &PathModal{
-		DownloadPath: core.App.Client.DownloadPath,
-		LogsPath:     core.App.Client.Logger.Path,
+		app: app,
 	}
 	pathModal.setForm()
 
@@ -37,78 +33,103 @@ func newPathModal() *PathModal {
 }
 
 func (p *PathModal) setForm() {
+	log := slog.With("PathModal", "setForm")
+
 	modal := func(p tview.Primitive, width, height int) tview.Primitive {
 		return tview.NewGrid().
 			SetColumns(0, width, 0).SetRows(0, height, 0).
 			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
 
+	// log.Debug("Variables", slog.Group("Paths",
+	// 	"DownloadPath", p.app.Config.DownloadPath,
+	// 	"LoggerPath", p.app.Config.LoggerPath,
+	// 	"BookmarksPath", p.app.Config.BookmarksPath,
+	// 	"CbzFormat", p.app.Config.CbzFormat,
+	// ))
+
 	dInput := tview.NewInputField()
-	dInput.SetLabel(utils.PathDownloadLabel).SetText(core.App.Client.DownloadPath)
+	dInput.SetLabel(utils.PathDownloadLabel).
+		SetText(p.app.Config.DownloadPath)
+	dInput.SetAutocompleteFunc(utils.GetMatches)
 
 	lInput := tview.NewInputField()
-	lInput.SetLabel(utils.PathLogsLabel).SetText(core.App.Client.Logger.Path)
+	lInput.SetLabel(utils.PathLogsLabel).
+		SetText(p.app.Config.LoggerPath)
+	lInput.SetAutocompleteFunc(utils.GetMatches)
 
-	dInput.SetAutocompleteFunc(getMatches)
-	lInput.SetAutocompleteFunc(getMatches)
+	bInput := tview.NewInputField()
+	bInput.SetLabel(utils.PathBookmarksLabel).
+		SetText(p.app.Config.BookmarksPath)
+	bInput.SetAutocompleteFunc(utils.GetMatches)
+
+	cbzCheckbox := tview.NewCheckbox()
+	cbzCheckbox.SetLabel(utils.CBZFormatCheckbox).
+		SetChecked(p.app.Config.CbzFormat).
+		SetChangedFunc(func(checked bool) {
+			p.app.Config.CbzFormat = checked
+		})
 
 	form := tview.NewForm()
 	form.SetBorder(true).SetTitle("Установить пути")
 	form.SetButtonsAlign(tview.AlignCenter)
-	form.AddFormItem(dInput).AddFormItem(lInput).
+	form.AddFormItem(dInput).AddFormItem(lInput).AddFormItem(bInput).AddFormItem(cbzCheckbox).
 		AddButton("OK", func() {
 			downloadPath := dInput.GetText()
 			logPath := lInput.GetText()
+			bookmarksPath := bInput.GetText()
 
-			core.App.Client.ChangePath(downloadPath)
-			core.App.Client.Logger.ChangePath(logPath)
+			if msg := p.app.Config.ChangeDownloadPath(downloadPath); msg != "" {
+				p.app.ShowModal(utils.DownloaderPathID, msg)
+			}
 
-			core.App.SaveConfig()
+			if msg := p.app.Config.ChangeLogPath(logPath); msg != "" {
+				p.app.ShowModal(utils.LoggerPathID, msg)
+			}
 
-			core.App.PageHolder.RemovePage(utils.PathsModalID)
+			if msg := p.app.Config.ChangeBookmarksPath(bookmarksPath); msg != "" {
+				p.app.ShowModal(utils.BookmarksPathID, msg)
+			}
+
+			if err := p.app.downloader.ChangeConfig(
+				downloadPath, p.app.Config.CbzFormat,
+			); err != nil {
+				msg := "Error changing downloader config"
+				log.Error(msg, "Error", err)
+				p.app.ShowModal(utils.BookmarksPathID, msg)
+			}
+
+			if err := p.app.Config.Save(); err != nil {
+				msg := "Error saving config"
+				log.Error(msg, "Error", err)
+				p.app.ShowModal(utils.BookmarksPathID, msg)
+			}
+
+			log.Info("Config was successfully changed", "Config", p.app.Config)
+			p.app.Pages.RemovePage(utils.PathsModalID)
 		}).
 		AddButton("Default", func() {
-			core.App.DefaultConfig()
-			core.App.PageHolder.RemovePage(utils.PathsModalID)
+			defaultConfig, err := services.DefaultConfig()
+			if err != nil {
+				p.app.ShowModal(utils.BookmarksPathID, err.Error())
+			}
+
+			p.app.Config = defaultConfig
+			if err := p.app.downloader.ChangeConfig(
+				defaultConfig.DownloadPath, defaultConfig.CbzFormat,
+			); err != nil {
+				msg := "Error changing downloader config"
+				log.Error(msg, "Error", err)
+				p.app.ShowModal(utils.BookmarksPathID, msg)
+			}
+
+			log.Info("Config set to default", "Config", defaultConfig)
+			p.app.Pages.RemovePage(utils.PathsModalID)
 		}).
 		AddButton("Cancel", func() {
-			core.App.PageHolder.RemovePage(utils.PathsModalID)
+			p.app.Pages.RemovePage(utils.PathsModalID)
 		})
 
 	p.form = form
-	p.modal = modal(form, 100, 9)
-}
-
-func getMatches(currentText string) (entries []string) {
-	const hintsNum = 10
-
-	if len(currentText) == 0 {
-		return nil
-	}
-
-	matchesWithPrefix, err := filepath.Glob(currentText + "*")
-	if err != nil {
-		return nil
-	}
-
-	if len(matchesWithPrefix) == 1 {
-		if currentText == matchesWithPrefix[0] {
-			return nil
-		}
-	}
-
-	var matches []string
-	for _, match := range matchesWithPrefix {
-		dirs := strings.Split(match, "/")
-		if strings.HasPrefix(dirs[len(dirs)-1], ".") {
-			continue
-		}
-		matches = append(matches, match)
-	}
-
-	if len(matches) > hintsNum {
-		matches = matches[:hintsNum]
-	}
-
-	return matches
+	p.modal = modal(form, 100, 13)
 }

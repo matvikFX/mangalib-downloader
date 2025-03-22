@@ -4,23 +4,24 @@ import (
 	"fmt"
 
 	"mangalib-downloader/components/utils"
-	"mangalib-downloader/core"
 
 	"github.com/rivo/tview"
 )
 
 type HelpPage struct {
+	app *TViewApp
+
 	Grid *tview.Grid
 }
 
-func ShowHelpPage() {
-	helpPage := newHelpPage()
+func (a *TViewApp) ShowHelpPage() {
+	helpPage := newHelpPage(a)
 
-	core.App.TView.SetFocus(helpPage.Grid)
-	core.App.PageHolder.AddAndSwitchToPage(utils.HelpPageID, helpPage.Grid, true)
+	a.App.SetFocus(helpPage.Grid)
+	a.Pages.AddAndSwitchToPage(utils.HelpPageID, helpPage.Grid, true)
 }
 
-func newHelpPage() *HelpPage {
+func newHelpPage(app *TViewApp) *HelpPage {
 	textFormat := fmt.Sprintf("%%-%ds:%%%ds\n", 25, 25)
 
 	text := "Сочетания клавиш\n" +
@@ -49,6 +50,8 @@ func newHelpPage() *HelpPage {
 	grid.AddItem(help, 0, 0, 6, 6, 0, 0, true)
 
 	helpPage := &HelpPage{
+		app: app,
+
 		Grid: grid,
 	}
 	helpPage.setHandlers()

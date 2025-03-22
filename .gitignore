@@ -11,7 +11,5 @@
 
 .vscode
 
-MangaLib-Downloader
-mangalib-downloader
-
-config
+auth_token
+config.yaml

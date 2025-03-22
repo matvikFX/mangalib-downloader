@@ -3,29 +3,31 @@ package components
 import (
 	"context"
 	"fmt"
-	"unicode/utf8"
-
+	"log/slog"
+	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
-	"mangalib-downloader/core"
 	"mangalib-downloader/models"
+	"unicode/utf8"
 
 	"github.com/rivo/tview"
 )
 
 type ListPage struct {
+	app *TViewApp
+
 	grid     *tview.Grid
 	textView *tview.TextView
 	table    *tview.Table
 }
 
-func ShowListPage() {
-	listPage := newListPage()
+func (a *TViewApp) ShowListPage() {
+	listPage := newListPage(a)
 
-	core.App.TView.SetFocus(listPage.grid)
-	core.App.PageHolder.AddAndSwitchToPage(utils.ListPageID, listPage.grid, true)
+	a.App.SetFocus(listPage.grid)
+	a.Pages.AddAndSwitchToPage(utils.ListPageID, listPage.grid, true)
 }
 
-func newListPage() *ListPage {
+func newListPage(app *TViewApp) *ListPage {
 	textView := tview.NewTextView()
 	textView.SetWrap(true).SetWordWrap(true).
 		SetTitle("Информация о манге").SetBorder(true)
@@ -43,6 +45,8 @@ func newListPage() *ListPage {
 		AddItem(textView, 0, 3, 1, 6, 0, 0, false)
 
 	listPage := &ListPage{
+		app: app,
+
 		grid:     grid,
 		textView: textView,
 		table:    table,
@@ -58,17 +62,17 @@ func (p *ListPage) setListTable() {
 	p.setHandlers(ctx, cancel)
 
 	tableTitle := "Популярная манга"
-	if core.App.Client.Query != "" {
+	if p.app.query != "" {
 		tableTitle = "Результаты поиска"
 	}
 
-	core.App.TView.QueueUpdateDraw(func() {
+	p.app.App.QueueUpdateDraw(func() {
 		p.table.SetTitle(fmt.Sprintf("%s. Загрузка...", tableTitle))
 	})
 
-	data, err := core.App.Client.GetData(ctx)
+	data, err := api.GetData(ctx, p.app.query, p.app.page)
 	if err != nil {
-		core.App.Client.Logger.WriteLog(err.Error())
+		slog.Error("Error receiving manga data", "Error", err)
 		return
 	}
 
@@ -76,11 +80,11 @@ func (p *ListPage) setListTable() {
 	manga := data.Manga
 
 	if meta.From == 0 {
-		ShowModal(utils.NoMangaID, "Манга не найдена")
-		if core.App.Client.Page == 1 {
-			core.App.Client.Query = ""
+		p.app.ShowModal(utils.NoMangaID, "Манга не найдена")
+		if p.app.page == 1 {
+			p.app.query = ""
 		} else {
-			core.App.Client.Page--
+			p.app.page--
 		}
 		go p.setListTable()
 		return
@@ -102,7 +106,7 @@ func (p *ListPage) setListTable() {
 		p.table.SetCell(idx, 0, title)
 	}
 
-	core.App.TView.QueueUpdateDraw(func() {
+	p.app.App.QueueUpdateDraw(func() {
 		p.table.Select(0, 0)
 		p.table.ScrollToBeginning()
 	})

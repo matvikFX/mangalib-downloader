@@ -14,10 +14,13 @@ const (
 	PathsModalID  = "paths_modal"
 
 	// Error modals
-	NoMangaID    = "manga_not_found"
-	NoBranchesID = "no_branches"
-	NoChaptersID = "chapters_not_found"
-	FirstPageID  = "first_page"
+	NoMangaID        = "manga_not_found"
+	NoBranchesID     = "no_branches"
+	NoChaptersID     = "chapters_not_found"
+	FirstPageID      = "first_page"
+	LoggerPathID     = "logger_path"
+	DownloaderPathID = "downloader_path"
+	BookmarksPathID  = "bookmarks_path"
 
 	// Download modals
 	DownloadSuccessID = "downloaded_successfully"
@@ -29,6 +32,8 @@ const (
 	SearchModalLabel = "Название"
 	BranchModalLabel = "Переводчики"
 
-	PathDownloadLabel = "Путь папки скачанной манги"
-	PathLogsLabel     = "Путь папки файлов логов"
+	PathDownloadLabel  = "Путь папки скачанной манги"
+	PathLogsLabel      = "Путь папки файлов логов"
+	PathBookmarksLabel = "Путь файла закладок"
+	CBZFormatCheckbox  = "Сохранять в формате cbz"
 )
