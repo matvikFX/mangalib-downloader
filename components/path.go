@@ -2,10 +2,10 @@ package components
 
 import (
 	"log/slog"
+	"manga-downloader/components/utils"
+	"manga-downloader/services"
 	"path/filepath"
 	"strings"
-
-	"manga-downloader/components/utils"
 
 	"github.com/rivo/tview"
 )
@@ -35,7 +35,7 @@ func newPathModal(app *TViewApp) *PathModal {
 }
 
 func (p *PathModal) setForm() {
-	log := p.app.Logger.With("PathModal", "setForm")
+	log := slog.With("PathModal", "setForm")
 
 	modal := func(p tview.Primitive, width, height int) tview.Primitive {
 		return tview.NewGrid().
@@ -47,6 +47,7 @@ func (p *PathModal) setForm() {
 		"DownloadPath", p.app.Config.DownloadPath,
 		"LoggerPath", p.app.Config.LoggerPath,
 		"BookmarksPath", p.app.Config.BookmarksPath,
+		"CbzFormat", p.app.Config.CbzFormat,
 	))
 
 	dInput := tview.NewInputField()
@@ -83,7 +84,7 @@ func (p *PathModal) setForm() {
 				p.app.ShowModal(utils.LoggerPathID, msg)
 			}
 
-			if msg := p.app.Config.ChangeBookmarkPath(bookmarksPath); msg != "" {
+			if msg := p.app.Config.ChangeBookmarksPath(bookmarksPath); msg != "" {
 				// Show error message
 				p.app.ShowModal(utils.BookmarksPathID, msg)
 			}
@@ -92,7 +93,12 @@ func (p *PathModal) setForm() {
 			p.app.Pages.RemovePage(utils.PathsModalID)
 		}).
 		AddButton("Default", func() {
-			p.app.Config.Default()
+			defaultConfig, err := services.DefaultConfig()
+			if err != nil {
+				p.app.ShowModal(utils.BookmarksPathID, err.Error())
+			}
+
+			p.app.Config = defaultConfig
 			p.app.Pages.RemovePage(utils.PathsModalID)
 		}).
 		AddButton("Cancel", func() {

@@ -3,11 +3,11 @@ package components
 import (
 	"context"
 	"fmt"
-	"unicode/utf8"
-
+	"log/slog"
 	"manga-downloader/api"
 	"manga-downloader/components/utils"
 	"manga-downloader/models"
+	"unicode/utf8"
 
 	"github.com/rivo/tview"
 )
@@ -72,7 +72,7 @@ func (p *ListPage) setListTable() {
 
 	data, err := api.GetData(ctx, p.app.query, p.app.page)
 	if err != nil {
-		p.app.Logger.Error(err.Error())
+		slog.Error("Error receiving manga data", "Error", err)
 		return
 	}
 

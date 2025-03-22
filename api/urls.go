@@ -19,10 +19,18 @@ const (
 	TeamURL     = "https://api.lib.social/api/teams/"
 	BranchesURL = "https://api.lib.social/api/branches/"
 
+	// Дополнительные ссылки
+	// MangaLibURL = "https://api2.mangalib.me/api/manga/"
+	// TeamURL     = "https://api2.mangalib.me/api/teams/"
+	// BranchesURL = "https://api2.mangalib.me/api/branches/"
+
+	// SecondURL     = "https://img4.imgslib.link"   // Работает
+	// Как я понял, существует только два сервера для изображений: основной, со сжатыми изображениями
 	FirstURL      = "https://img2.mixlib.me"
-	SecondURL     = "https://img4.imgslib.link"   // Работает
+	SecondURL     = "https://img2.imglib.info"
 	CompressedURL = "https://img33.imgslib.link/" // Работает
 	DownloadURL   = "https://img4.imgslib.org"
+
 	// Чтобы получить список определенной команды,
 	// надо к поиску добавить
 	// targer_id="TeamID"&targer_model=team
@@ -81,7 +89,7 @@ func createChaptersURL(slug string) string {
 }
 
 func createPageURL(image string) string {
-	return CompressedURL + image
+	return FirstURL + image
 }
 
 func createBranchesURL(id int) string {

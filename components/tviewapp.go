@@ -2,7 +2,7 @@ package components
 
 import (
 	"log/slog"
-
+	"manga-downloader/downloader"
 	"manga-downloader/models"
 	"manga-downloader/services"
 
@@ -10,12 +10,13 @@ import (
 )
 
 type TViewApp struct {
-	Logger    *slog.Logger
 	Config    *services.Config
 	Bookmarks *services.Bookmarks
 
 	App   *tview.Application
 	Pages *tview.Pages
+
+	downloader *downloader.Downloader
 
 	query         string
 	page          int
@@ -24,17 +25,18 @@ type TViewApp struct {
 }
 
 func NewTViewApp(
-	logger *slog.Logger,
 	cfg *services.Config,
 	bookmarks *services.Bookmarks,
+	downloader *downloader.Downloader,
 ) *TViewApp {
 	return &TViewApp{
-		Logger:    logger,
 		Config:    cfg,
 		Bookmarks: bookmarks,
 
 		App:   tview.NewApplication(),
 		Pages: tview.NewPages(),
+
+		downloader: downloader,
 
 		query:    "",
 		page:     1,
@@ -43,7 +45,7 @@ func NewTViewApp(
 }
 
 func (a *TViewApp) Start() error {
-	log := a.Logger.With("TViewApp", "Start")
+	log := slog.With("TViewApp", "Start")
 
 	if err := a.Bookmarks.Load(a.Config.BookmarksPath); err != nil {
 		log.Error("No bookmarks file detected", "Error", err)

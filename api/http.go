@@ -4,26 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
-
-	"manga-downloader/services"
 )
 
-var logger = services.NewLogger()
-
-func ReqImg(ctx context.Context, url string) ([]byte, error) {
+func ReqImg(ctx context.Context, pageURL string) ([]byte, error) {
+	url := createPageURL(pageURL)
 	resp, err := req(ctx, url)
 	if err != nil {
-		log.Println("Error getting response")
+		slog.Error("Error getting response", "Error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	img, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error reading image")
+		slog.Error("Error reading image", "Error", err)
 		return nil, err
 	}
 
@@ -33,13 +30,13 @@ func ReqImg(ctx context.Context, url string) ([]byte, error) {
 func ReqJSON(ctx context.Context, url string, data any) error {
 	resp, err := req(ctx, url)
 	if err != nil {
-		log.Println("Error getting response")
+		slog.Error("Error getting response", "Error", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
-		log.Println("Error decondig response")
+		slog.Error("Error decondig response", "Error", err)
 		return err
 	}
 
@@ -49,7 +46,7 @@ func ReqJSON(ctx context.Context, url string, data any) error {
 func req(ctx context.Context, url string) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		log.Println("Error creating request with context")
+		slog.Error("Error creating request with context", "Error", err)
 		return nil, err
 	}
 
@@ -67,10 +64,12 @@ func req(ctx context.Context, url string) (*http.Response, error) {
 
 	header := http.Header{}
 	header.Set("Content-Type", contType)
+	header.Set("Authorization", readAuthToken())
 	req.Header = header
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		slog.Error("Error while doing a request", "Error", err)
 		return nil, err
 	}
 
@@ -80,7 +79,7 @@ func req(ctx context.Context, url string) (*http.Response, error) {
 func makeRequest(ctx context.Context, url string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		log.Println("Error creating request with context")
+		slog.Error("Error creating request with context", "Error", err)
 		return nil, err
 	}
 
@@ -98,6 +97,7 @@ func makeRequest(ctx context.Context, url string) (*http.Request, error) {
 
 	header := http.Header{}
 	header.Set("Content-Type", contType)
+	header.Set("Authorization", readAuthToken())
 	req.Header = header
 
 	return req, nil

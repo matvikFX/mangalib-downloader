@@ -2,16 +2,19 @@ package downloader
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"manga-downloader/api"
 	"manga-downloader/models"
+	"os"
 )
+
+const workerNum = 4
 
 func (d *Downloader) worker(ctx context.Context,
 	chapChan <-chan *models.Chapter,
 	manga *models.Manga, branchID int, teams string,
 ) error {
-	log := d.logger.With("Downloader", "worker")
+	log := slog.With("Downloader", "worker")
 
 	for {
 		select {
@@ -27,6 +30,11 @@ func (d *Downloader) worker(ctx context.Context,
 			chapPath := CreateChapterPath(d.downloadPath, teams, manga.RusName,
 				chap.Volume, chap.Number, chap.Name)
 
+			if err := os.MkdirAll(chapPath, 0750); err != nil {
+				log.Error("Error creating chapter folder", "Error", err)
+				return err
+			}
+
 			if err := d.DownloadChapter(ctx, manga.Slug,
 				chap.Volume, chap.Number,
 				branchID, chapPath,
@@ -39,23 +47,23 @@ func (d *Downloader) worker(ctx context.Context,
 }
 
 func (d *Downloader) downloadPage(ctx context.Context, pagePath, pageURL string) error {
-	log := d.logger.With("Downloader", "downloadPage")
+	log := slog.With("Downloader", "downloadPage")
 
-	url := createPageURL(pageURL)
-	log.Debug("Pages URL", "url", url)
+	// url := createPageURL(pageURL)
+	// log.Debug("Pages URL", "url", url)
 
-	img, err := api.ReqImg(ctx, url)
+	img, err := api.ReqImg(ctx, pageURL)
 	if err != nil {
 		log.Error("Error receiving image", "Error", err)
 		return err
 	}
-	log.Debug("Size of the image", "imgSize", len(img))
+	// log.Debug("Size of the image", "imgSize", len(img))
 
 	if err = createFile(img, pagePath); err != nil {
 		log.Error("Error createing file", "Error", err)
 		return err
 	}
 
-	log.Debug(fmt.Sprintf("Image %s successfully downloaded", pageURL))
+	// log.Debug(fmt.Sprintf("Image %s successfully downloaded", pageURL))
 	return nil
 }

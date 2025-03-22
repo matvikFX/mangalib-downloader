@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-
+	"log/slog"
 	"manga-downloader/models"
 )
 
@@ -156,7 +156,7 @@ func GetBranchTeams(ctx context.Context, branchID int) string {
 	if branchID != 0 {
 		branches, err := GetMangaBranches(ctx, branchID)
 		if err != nil {
-			logger.Write(err.Error())
+			slog.Debug("Error receiving branches", "Error", err)
 		}
 
 		branchTeams = branches.BranchTeams()

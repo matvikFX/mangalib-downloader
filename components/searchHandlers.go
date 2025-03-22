@@ -2,10 +2,10 @@ package components
 
 import (
 	"context"
-	"strings"
-
+	"log/slog"
 	"manga-downloader/api"
 	"manga-downloader/components/utils"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -13,7 +13,7 @@ import (
 
 func (p *SearchModal) setHandlers(ctx context.Context) {
 	p.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log := p.app.Logger.With("SearchModal", "SetInputCapture")
+		log := slog.With("SearchModal", "SetInputCapture")
 
 		switch event.Key() {
 		case tcell.KeyEscape: // Закрытие страницы поиска

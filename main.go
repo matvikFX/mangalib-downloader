@@ -3,16 +3,19 @@ package main
 import (
 	"log"
 	"log/slog"
+	"manga-downloader/components"
+	"manga-downloader/downloader"
+	"manga-downloader/services"
 	"os"
 	"path/filepath"
 	"time"
-
-	"manga-downloader/components"
-	"manga-downloader/services"
 )
 
 func main() {
-	cfg := services.NewConfig()
+	cfg, err := services.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	localtime := time.Now().Local()
 	fileName := localtime.Format(time.DateOnly) + ".json"
@@ -32,15 +35,17 @@ func main() {
 		AddSource: true,
 		Level:     slog.LevelDebug,
 	})
+
 	logger := slog.New(fileHandler)
+	slog.SetDefault(logger)
 
 	if err := Init(logger, cfg); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func Init(logger *slog.Logger, cfg *services.Config) error {
-	log := logger.With("App", "Init")
+	log := slog.With("App", "Init")
 
 	// log.Info("Loading config")
 	// cfg := services.NewConfig()
@@ -50,6 +55,9 @@ func Init(logger *slog.Logger, cfg *services.Config) error {
 	// }
 	// log.Debug("Config object", "config", cfg)
 
+	log.Info("Loading downloader")
+	downloader := downloader.New(cfg.DownloadPath)
+
 	log.Info("Loading bookmarks")
 	bookmarks := services.NewBookmarks(logger)
 	if err := bookmarks.Load(cfg.BookmarksPath); err != nil {
@@ -58,7 +66,7 @@ func Init(logger *slog.Logger, cfg *services.Config) error {
 	}
 
 	log.Info("Starting application")
-	app := components.NewTViewApp(logger, cfg, bookmarks)
+	app := components.NewTViewApp(cfg, bookmarks, downloader)
 	if err := app.Start(); err != nil {
 		return err
 	}

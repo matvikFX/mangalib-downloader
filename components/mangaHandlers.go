@@ -2,7 +2,6 @@ package components
 
 import (
 	"context"
-
 	"manga-downloader/components/utils"
 
 	"github.com/gdamore/tcell/v2"
@@ -44,9 +43,9 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 			}
 		case tcell.KeyCtrlA: // Скачивание всех глав
 			go func() {
-				p.downloader.DownloadManga(ctx, p.app.selectedManga, p.app.branchID)
+				p.app.downloader.DownloadManga(ctx, p.app.selectedManga, p.app.branchID)
 
-				<-p.downloader.Downloaded
+				// <-p.app.downloader.Downloaded
 				p.app.ShowModal(utils.DownloadSuccessID,
 					"Манга '"+p.app.selectedManga.RusName+"' успешно скачана")
 

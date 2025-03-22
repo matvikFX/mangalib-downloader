@@ -2,39 +2,29 @@ package downloader
 
 import (
 	"fmt"
+	"log/slog"
+	"manga-downloader/models"
+	"manga-downloader/services"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 )
 
-func (c *MangaLibDownloader) ChangePath(path string) string {
-	if !isValidPath(path) {
-		c.DownloadPath = DefaultDownloadPath()
+func (d *Downloader) ChangePath(path string) error {
+	log := slog.With("Downloader", "ChangePath")
 
-		c.Logger.Write("Error: invalid path. Setting path to default")
-		return "Invalid path. Setting path to default"
+	if !isValidPath(path) {
+		log.Error("Setting path to default")
+		d.downloadPath = services.DefaultPath("")
+
+		err := "invalid path"
+		return fmt.Errorf(err)
 	}
 
-	c.DownloadPath = path
-	return ""
+	d.downloadPath = path
+	return nil
 }
-
-// Находится в API
-// func (c *MangaLibDownloader) GetBranchTeams(ctx context.Context, branchID int) string {
-// 	branchTeams := make(map[int]string)
-// 	if branchID != 0 {
-// 		branches, err := api.GetMangaBranches(ctx, branchID)
-// 		if err != nil {
-// 			c.Logger.Write(err.Error())
-// 		}
-//
-// 		branchTeams = branches.BranchTeams()
-// 	}
-//
-// 	return branchTeams[branchID]
-// }
 
 // teams необязательно указывать
 func CreateChapterPath(
@@ -97,44 +87,21 @@ func isValidPath(path string) bool {
 	return false
 }
 
-func DefaultDownloadPath() string {
-	var path string
-	switch runtime.GOOS {
-	case "windows":
-		path = filepath.Join(os.Getenv("USERPROFILE"), "Downloads", "MangaDownloader")
-	default:
-		path = filepath.Join(os.Getenv("HOME"), "MangaDownloader")
-	}
-	return path
-}
-
 func createFile(data []byte, pagePath string) error {
 	file, err := os.Create(pagePath)
 	if err != nil {
-		fmt.Println("Error creating file")
+		slog.Error("Error creating file", "Error", err)
 		return err
 	}
 	defer file.Close()
 
 	_, err = file.Write(data)
 	if err != nil {
-		fmt.Println("Error writing to file")
+		slog.Error("Error writing to file", "Error", err)
 		return err
 	}
 
 	return nil
-}
-
-func createPageURL(image string) string {
-	// Download URLs
-	const (
-		FirstURL      = "https://img2.mixlib.me"
-		SecondURL     = "https://img4.imgslib.link"   // Работает
-		CompressedURL = "https://img33.imgslib.link/" // Работает
-		DownloadURL   = "https://img4.imgslib.org"
-	)
-
-	return CompressedURL + image
 }
 
 func createPageName(pageSlug int, pageImg string) string {
@@ -152,4 +119,26 @@ func removeChars(text string) string {
 	}
 
 	return text
+}
+
+func downloadedChapters(chapters models.ChapterList) []string {
+	chapList := make([]string, len(chapters))
+	for idx, chapter := range chapters {
+		var fullName string
+		if chapter.Name == "" {
+			fullName = fmt.Sprintf(
+				"Том %s Глава %s",
+				chapter.Volume, chapter.Number,
+			)
+		} else {
+			fullName = fmt.Sprintf(
+				"Том %s Глава %s - %s",
+				chapter.Volume, chapter.Number, chapter.Name,
+			)
+		}
+		fullName = strings.TrimSpace(fullName)
+		chapList[idx] = fullName
+	}
+
+	return chapList
 }

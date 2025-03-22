@@ -7,8 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const DefaultBookmarksPath = "bookmarks"
-
 type title struct {
 	Name    string `yaml:"name"`
 	URL     string `yaml:"url"`
@@ -32,7 +30,7 @@ func NewBookmarks(logger *slog.Logger) *Bookmarks {
 }
 
 func (b *Bookmarks) Save() error {
-	log := b.logger.With("Bookmarks", "Save")
+	log := slog.With("Bookmarks", "Save")
 
 	content, err := yaml.Marshal(b.List)
 	if err != nil {
@@ -49,16 +47,15 @@ func (b *Bookmarks) Save() error {
 }
 
 func (b *Bookmarks) Load(path string) error {
-	log := b.logger.With("Bookmarks", "Save")
+	log := slog.With("Bookmarks", "Save")
 
 	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Warn("Bookmarks file does not exists. Creating...")
+		log.Warn("Bookmarks file does not exists. Creating new file")
 		if _, err := os.Create(path); err != nil {
 			log.Error("Error creating bookmarks file", "Error", err)
 			return err
 		}
-
 		return nil
 	}
 

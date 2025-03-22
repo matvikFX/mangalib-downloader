@@ -7,7 +7,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const cfgFile = "config.yaml"
+const (
+	cfgFile              = "config.yaml"
+	DefaultLoggerPath    = "logs"
+	DefaultBookmarksPath = "bookmarks.yaml"
+)
 
 type Config struct {
 	DownloadPath  string `yaml:"download_path"`
@@ -16,37 +20,62 @@ type Config struct {
 	CbzFormat     bool   `yaml:"cbz_format"`
 }
 
-func NewConfig() *Config {
+func Load() (*Config, error) {
 	config := &Config{}
 	if err := config.Load(); err != nil {
-		config = &Config{
-			DownloadPath:  DefaultPath(""),
-			LoggerPath:    DefaultPath(DefaultLoggerPath),
-			BookmarksPath: DefaultPath(DefaultBookmarksPath),
-			CbzFormat:     true,
+		log.Println("Config file does not exists. Creating new file")
+		config, err = DefaultConfig()
+		if err != nil {
+			log.Fatal("Can't create config file")
+			return nil, err
 		}
-		config.Save()
 	}
-	return config
+	return config, nil
 }
 
-func (c *Config) Default() {
-	c = NewConfig()
+// Creates config with default paths:
+// DownloadPath: $HOME/MangaDownloader,
+// LoggerPath: $HOME/MangaDownloader/logs,
+// BookmarksPath: $HOME/MangaDownloader/cbzFormatokmarks.yaml
+func DefaultConfig() (*Config, error) {
+	config := &Config{
+		DownloadPath:  DefaultPath(""),
+		LoggerPath:    DefaultPath(DefaultLoggerPath),
+		BookmarksPath: DefaultPath(DefaultBookmarksPath),
+		CbzFormat:     true,
+	}
+
+	file, err := os.Create(cfgFile)
+	if err != nil {
+		log.Println("Error creating file")
+		return config, err
+	}
+	defer file.Close()
+
+	jsonConf, err := yaml.Marshal(config)
+	if err != nil {
+		log.Println("Error marshaling config")
+		return config, err
+	}
+
+	_, err = file.Write(jsonConf)
+	if err != nil {
+		log.Println("Error writing config to file")
+		return config, err
+	}
+
+	return config, nil
 }
 
 func (c *Config) Save() error {
-	// log := c.logger.With("Config", "Save")
-
 	jsonConf, err := yaml.Marshal(c)
 	if err != nil {
-		// log.Fatal(err)
-		// log.Error("Can't marshal config", "Error", err)
+		log.Println("Error marshaling config")
 		return err
 	}
 
 	if err := os.WriteFile(cfgFile, jsonConf, 0o644); err != nil {
-		// log.Fatal(err)
-		// log.Error("Can't save config file", "Error", err)
+		log.Println("Error writing config to file")
 		return err
 	}
 
@@ -54,68 +83,55 @@ func (c *Config) Save() error {
 }
 
 func (c *Config) Load() error {
-	// log := c.logger.With("Config", "Load")
-
 	content, err := os.ReadFile(cfgFile)
 	if err != nil {
-		// log.Error("Config file does not exists", "Error", err)
-		// return err
-		log.Fatal(err)
+		log.Println("Config file does not exists")
+		return err
 	}
 
 	if err := yaml.Unmarshal(content, c); err != nil {
-		// log.Error("Can't unmarshal config", "Error", err)
-		// return err
-		log.Fatal(err)
+		log.Println("Can't unmarshal config")
+		return err
 	}
 
 	return nil
 }
 
-func (c *Config) ChangeDownloadPath(newPath string) string {
-	// log := c.logger.With("Config", "ChangeDownloadPath")
-	//
-	if !IsPathValid(newPath) {
+func (c *Config) ChangeDownloadPath(newDownloadPath string) string {
+	if !IsPathValid(newDownloadPath) {
 		c.DownloadPath = DefaultPath("")
+
 		err := "Invalid path. Setting download path to default"
-		// log.Error(err)
+		log.Println(err)
 		return err
 	}
 
-	c.DownloadPath = newPath
-	// log.Warn("Download path changed", "DownloadPath", c.DownloadPath)
-
+	c.DownloadPath = newDownloadPath
 	return ""
 }
 
-func (c *Config) ChangeLogPath(newPath string) string {
-	// log := c.logger.With("Config", "ChangeLogPath")
-
-	if !IsPathValid(newPath) {
+func (c *Config) ChangeLogPath(newLogPath string) string {
+	if !IsPathValid(newLogPath) {
 		c.LoggerPath = DefaultPath(DefaultLoggerPath)
+
 		err := "Invalid path. Setting logger path to default"
-		// log.Error(err)
+		log.Println(err)
 		return err
 	}
 
-	c.LoggerPath = newPath
-	// log.Warn("Logger path changed", "LoggerPath", c.LoggerPath)
-
+	c.LoggerPath = newLogPath
 	return ""
 }
 
-func (c *Config) ChangeBookmarkPath(newPath string) string {
-	// log := c.logger.With("Config", "ChangeBookmarkPath")
-
-	if !IsPathValid(newPath) {
+func (c *Config) ChangeBookmarksPath(newBookmarksPath string) string {
+	if !IsPathValid(newBookmarksPath) {
 		c.BookmarksPath = DefaultPath(DefaultBookmarksPath)
+
 		err := "Invalid path. Setting bookmarks path to default"
-		// log.Error(err)
+		log.Println(err)
 		return err
 	}
 
-	c.BookmarksPath = newPath
-	// log.Warn("Bookmarks path changed", "BookmarksPath", c.BookmarksPath)
-
+	c.BookmarksPath = newBookmarksPath
 	return ""
 }
