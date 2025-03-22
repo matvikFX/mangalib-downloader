@@ -12,11 +12,13 @@ import (
 
 type Downloader struct {
 	downloadPath string
+	cbzFormat    bool
 }
 
-func New(downloadPath string) *Downloader {
+func New(downloadPath string, cbzFormat bool) *Downloader {
 	return &Downloader{
 		downloadPath: downloadPath,
+		cbzFormat:    cbzFormat,
 	}
 }
 
@@ -36,8 +38,17 @@ func (d *Downloader) DownloadManga(ctx context.Context,
 		log.Error("Error downloading chapters", "Error", err)
 		return err
 	}
+	log.Info("Manga successfully downloaded", "manga", removeChars(manga.RusName))
 
-	log.Info("Manga successfully downlaoded", "manga", manga.RusName)
+	cbzPath := fmt.Sprintf("%s/%s", d.downloadPath, removeChars(manga.RusName))
+	if d.cbzFormat {
+		if err := CreateCBZArchive(cbzPath); err != nil {
+			log.Error("Error converting to cbz format", "Error", err)
+			return err
+		}
+	}
+	log.Info("Manga added to CBZ archive")
+
 	return nil
 }
 
@@ -75,8 +86,17 @@ func (d *Downloader) DownloadChapters(ctx context.Context,
 	if err := g.Wait(); err != nil {
 		return err
 	}
+	log.Info("Chapters successfully downloaded", "chapters", downloadedChapters(chapters))
 
-	log.Info("Chapters successfully downlaoded", "chapters", downloadedChapters(chapters))
+	cbzPath := fmt.Sprintf("%s/%s", d.downloadPath, removeChars(manga.RusName))
+	if d.cbzFormat {
+		if err := CreateCBZArchive(cbzPath); err != nil {
+			log.Error("Error converting to cbz format", "Error", err)
+			return err
+		}
+	}
+	log.Info("Manga added to CBZ archive")
+
 	return nil
 }
 
@@ -103,7 +123,7 @@ func (d *Downloader) DownloadChapter(ctx context.Context,
 
 		// Если файл скачан, пропускаем
 		if CheckExistence(pagePath) {
-			log.Warn("Chapter already downlaoded")
+			log.Warn("Chapter already downloaded")
 			continue
 		}
 
@@ -125,7 +145,7 @@ func (d *Downloader) DownloadChapter(ctx context.Context,
 	}
 
 	log.Info(fmt.Sprintf(
-		"Chapter %s-%s successfully downlaoded",
+		"Chapter %s-%s successfully downloaded",
 		chapter.Volume, chapter.Number,
 	))
 	return nil

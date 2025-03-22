@@ -65,6 +65,8 @@ func (a *TViewApp) Start() error {
 }
 
 func (a *TViewApp) Stop() {
+	a.App.EnableMouse(false)
+
 	a.App.Sync()
 	a.App.Stop()
 }

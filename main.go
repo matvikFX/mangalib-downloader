@@ -47,16 +47,8 @@ func main() {
 func Init(logger *slog.Logger, cfg *services.Config) error {
 	log := slog.With("App", "Init")
 
-	// log.Info("Loading config")
-	// cfg := services.NewConfig()
-	// if err := cfg.Load(); err != nil {
-	// 	log.Error("Error loading config", "Error", err)
-	// 	return err
-	// }
-	// log.Debug("Config object", "config", cfg)
-
 	log.Info("Loading downloader")
-	downloader := downloader.New(cfg.DownloadPath)
+	downloader := downloader.New(cfg.DownloadPath, cfg.CbzFormat)
 
 	log.Info("Loading bookmarks")
 	bookmarks := services.NewBookmarks(logger)

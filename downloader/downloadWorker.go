@@ -49,9 +49,6 @@ func (d *Downloader) worker(ctx context.Context,
 func (d *Downloader) downloadPage(ctx context.Context, pagePath, pageURL string) error {
 	log := slog.With("Downloader", "downloadPage")
 
-	// url := createPageURL(pageURL)
-	// log.Debug("Pages URL", "url", url)
-
 	img, err := api.ReqImg(ctx, pageURL)
 	if err != nil {
 		log.Error("Error receiving image", "Error", err)

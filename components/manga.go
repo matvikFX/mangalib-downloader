@@ -188,9 +188,13 @@ func (p *MangaPage) downloadSelected(ctx context.Context, branchID int) {
 		chaps = append(chaps, chap)
 	}
 
-	p.app.downloader.DownloadChapters(ctx, &p.app.selectedManga.Manga, chaps, branchID)
+	if err := p.app.downloader.DownloadChapters(
+		ctx, &p.app.selectedManga.Manga, chaps, branchID,
+	); err != nil {
+		p.app.ShowModal(utils.DownloadFailID, err.Error())
+		return
+	}
 
-	// <-p.downloader.Downloaded
 	p.app.ShowModal(utils.DownloadSuccessID,
 		"Выбранные главы манги '"+p.app.selectedManga.RusName+"' успешно скачаны")
 

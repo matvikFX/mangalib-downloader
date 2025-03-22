@@ -20,7 +20,7 @@ func (t *TViewApp) setHandlers() {
 		case tcell.KeyCtrlS: // Поиск по названию
 			t.ShowSearchModal()
 		case tcell.KeyCtrlC: // Завершение работы
-			t.App.Stop()
+			t.Stop()
 		}
 
 		return event

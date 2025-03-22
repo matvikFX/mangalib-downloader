@@ -35,4 +35,5 @@ const (
 	PathDownloadLabel  = "Путь папки скачанной манги"
 	PathLogsLabel      = "Путь папки файлов логов"
 	PathBookmarksLabel = "Путь файла закладок"
+	CBZFormatCheckbox  = "Сохранять в формате cbz"
 )

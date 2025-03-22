@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (d *Downloader) ChangePath(path string) error {
+func (d *Downloader) ChangeConfig(path string, cbzFormat bool) error {
 	log := slog.With("Downloader", "ChangePath")
 
 	if !isValidPath(path) {
@@ -23,6 +23,7 @@ func (d *Downloader) ChangePath(path string) error {
 	}
 
 	d.downloadPath = path
+	d.cbzFormat = cbzFormat
 	return nil
 }
 
