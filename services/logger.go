@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -11,6 +12,7 @@ import (
 const DefaultLoggerPath = "logs"
 
 type Logger struct {
+	Log  *slog.Logger
 	Path string
 }
 

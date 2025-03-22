@@ -59,7 +59,7 @@ func newMangaPage(ctx context.Context, app *TViewApp) *MangaPage {
 
 	mangaPage := &MangaPage{
 		app:        app,
-		downloader: downloader.NewClient(),
+		downloader: downloader.NewClient(app.Logger),
 
 		selected: make(map[int]bool),
 
