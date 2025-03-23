@@ -6,6 +6,7 @@ import (
 	"mangalib-downloader/api"
 	"mangalib-downloader/models"
 	"os"
+	"strings"
 )
 
 const workerNum = 4
@@ -49,12 +50,23 @@ func (d *Downloader) worker(ctx context.Context,
 func (d *Downloader) downloadPage(ctx context.Context, pagePath, pageURL string) error {
 	log := slog.With("Downloader", "downloadPage")
 
-	img, err := api.ReqImg(ctx, pageURL)
+	reqURL := d.servers[d.serversIdx] + pageURL
+	img, err := api.ReqImg(ctx, reqURL)
 	if err != nil {
 		log.Error("Error receiving image", "Error", err)
 		return err
 	}
-	// log.Debug("Size of the image", "imgSize", len(img))
+
+	if strings.HasPrefix(strings.ToLower(string(img)), "<!doctype") {
+		log.Warn("Image corrupted. Changing server")
+
+		d.serversIdx++
+		if d.serversIdx == len(d.servers) {
+			log.Error("No more available servers", "Error", ErrNoServers)
+			return ErrNoServers
+		}
+		return d.downloadPage(ctx, pagePath, pageURL)
+	}
 
 	if err = createFile(img, pagePath); err != nil {
 		log.Error("Error createing file", "Error", err)

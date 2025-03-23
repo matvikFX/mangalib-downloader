@@ -11,6 +11,12 @@ var authToken = ""
 func readAuthToken() string {
 	log := slog.With("API", "readAuthToken")
 
+	var exists bool
+	authToken, exists = os.LookupEnv("AUTH_TOKEN")
+	if exists {
+		return authToken
+	}
+
 	if authToken != "" {
 		return authToken
 	}

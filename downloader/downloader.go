@@ -13,12 +13,23 @@ import (
 type Downloader struct {
 	downloadPath string
 	cbzFormat    bool
+
+	servers    []string
+	serversIdx int
 }
 
 func New(downloadPath string, cbzFormat bool) *Downloader {
 	return &Downloader{
 		downloadPath: downloadPath,
 		cbzFormat:    cbzFormat,
+
+		servers: []string{
+			"https://img2.imglib.info",
+			"https://img33.imgslib.link/",
+			"https://img2.mixlib.me",
+			// "https://img4.imgslib.org",
+		},
+		serversIdx: 0,
 	}
 }
 
@@ -26,6 +37,7 @@ func (d *Downloader) DownloadManga(ctx context.Context,
 	manga *models.MangaInfo, branchID int,
 ) error {
 	log := slog.With("Downloader", "DownloadManga")
+	d.serversIdx = 0
 
 	chapters, err := api.GetChapters(ctx, manga.Slug, branchID)
 	if err != nil {
@@ -43,7 +55,7 @@ func (d *Downloader) DownloadManga(ctx context.Context,
 	cbzPath := fmt.Sprintf("%s/%s", d.downloadPath, removeChars(manga.RusName))
 	if d.cbzFormat {
 		if err := CreateCBZArchive(cbzPath); err != nil {
-			log.Error("Error converting to cbz format", "Error", err)
+			// log.Error("Error converting to cbz format", "Error", err)
 			return err
 		}
 	}
@@ -91,7 +103,7 @@ func (d *Downloader) DownloadChapters(ctx context.Context,
 	cbzPath := fmt.Sprintf("%s/%s", d.downloadPath, removeChars(manga.RusName))
 	if d.cbzFormat {
 		if err := CreateCBZArchive(cbzPath); err != nil {
-			log.Error("Error converting to cbz format", "Error", err)
+			// log.Error("Error converting to cbz format", "Error", err)
 			return err
 		}
 	}
@@ -104,6 +116,7 @@ func (d *Downloader) DownloadChapter(ctx context.Context,
 	slug string, volume, number string, branchID int, chapPath string,
 ) error {
 	log := slog.With("Downloader", "DownloadChapters")
+	d.serversIdx = 0
 
 	// Получение страниц
 	chapter, err := api.GetChapter(ctx, slug, volume, number, branchID)

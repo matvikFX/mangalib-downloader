@@ -24,11 +24,11 @@ const (
 	// TeamURL     = "https://api2.mangalib.me/api/teams/"
 	// BranchesURL = "https://api2.mangalib.me/api/branches/"
 
-	// SecondURL     = "https://img4.imgslib.link"   // Работает
+	// SecondURL     = "https://img4.imgslib.link"
 	// Как я понял, существует только два сервера для изображений: основной, со сжатыми изображениями
-	FirstURL      = "https://img2.mixlib.me"
-	SecondURL     = "https://img2.imglib.info"
-	CompressedURL = "https://img33.imgslib.link/" // Работает
+	FirstURL      = "https://img2.imglib.info"
+	SecondURL     = "https://img2.mixlib.me"
+	CompressedURL = "https://img33.imgslib.link/"
 	DownloadURL   = "https://img4.imgslib.org"
 
 	// Чтобы получить список определенной команды,

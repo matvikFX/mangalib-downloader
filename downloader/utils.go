@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"mangalib-downloader/models"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+var ErrNoServers = errors.New("image corrupted")
 
 func (d *Downloader) ChangeConfig(path string, cbzFormat bool) error {
 	log := slog.With("Downloader", "ChangePath")

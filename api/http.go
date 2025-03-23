@@ -12,8 +12,7 @@ import (
 func ReqImg(ctx context.Context, pageURL string) ([]byte, error) {
 	log := slog.With("API", "ReqImg")
 
-	url := createPageURL(pageURL)
-	resp, err := req(ctx, url)
+	resp, err := req(ctx, pageURL)
 	if err != nil {
 		log.Error("Error getting response", "Error", err)
 		return nil, err
@@ -78,6 +77,7 @@ func req(ctx context.Context, url string) (*http.Response, error) {
 		log.Error("Error while doing a request", "Error", err)
 		return nil, err
 	}
+	// log.Debug("Response status", "status", resp.Status)
 
 	return resp, nil
 }
