@@ -2,7 +2,6 @@ package components
 
 import (
 	"context"
-
 	"mangalib-downloader/components/utils"
 
 	"github.com/rivo/tview"
@@ -17,7 +16,7 @@ type SearchModal struct {
 
 func (a *TViewApp) ShowSearchModal() {
 	searchModal := newSearchModal(a)
-	searchModal.setHandlers(context.TODO())
+	searchModal.setHandlers(context.Background())
 
 	a.App.SetFocus(searchModal.form)
 	a.Pages.AddPage(utils.SearchModalID, searchModal.modal, true, true)

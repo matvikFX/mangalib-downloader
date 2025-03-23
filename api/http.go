@@ -10,17 +10,19 @@ import (
 )
 
 func ReqImg(ctx context.Context, pageURL string) ([]byte, error) {
+	log := slog.With("API", "ReqImg")
+
 	url := createPageURL(pageURL)
 	resp, err := req(ctx, url)
 	if err != nil {
-		slog.Error("Error getting response", "Error", err)
+		log.Error("Error getting response", "Error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	img, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("Error reading image", "Error", err)
+		log.Error("Error reading image", "Error", err)
 		return nil, err
 	}
 
@@ -28,15 +30,17 @@ func ReqImg(ctx context.Context, pageURL string) ([]byte, error) {
 }
 
 func ReqJSON(ctx context.Context, url string, data any) error {
+	log := slog.With("API", "ReqJSON")
+
 	resp, err := req(ctx, url)
 	if err != nil {
-		slog.Error("Error getting response", "Error", err)
+		log.Error("Error getting response", "Error", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
-		slog.Error("Error decondig response", "Error", err)
+		log.Error("Error decondig response", "Error", err)
 		return err
 	}
 
@@ -44,9 +48,11 @@ func ReqJSON(ctx context.Context, url string, data any) error {
 }
 
 func req(ctx context.Context, url string) (*http.Response, error) {
+	log := slog.With("API", "req")
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		slog.Error("Error creating request with context", "Error", err)
+		log.Error("Error creating request with context", "Error", err)
 		return nil, err
 	}
 
@@ -69,36 +75,9 @@ func req(ctx context.Context, url string) (*http.Response, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		slog.Error("Error while doing a request", "Error", err)
+		log.Error("Error while doing a request", "Error", err)
 		return nil, err
 	}
 
 	return resp, nil
-}
-
-func makeRequest(ctx context.Context, url string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		slog.Error("Error creating request with context", "Error", err)
-		return nil, err
-	}
-
-	var contType string
-	switch filepath.Ext(url) {
-	case ".jpg", ".jpeg", ".jpe", ".jif", ".jfif":
-		contType = "image/jpeg"
-	case ".gif":
-		contType = "image/gif"
-	case ".png":
-		contType = "image/png"
-	default:
-		contType = "application/json"
-	}
-
-	header := http.Header{}
-	header.Set("Content-Type", contType)
-	header.Set("Authorization", readAuthToken())
-	req.Header = header
-
-	return req, nil
 }

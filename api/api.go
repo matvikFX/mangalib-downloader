@@ -9,7 +9,7 @@ import (
 func GetData(
 	ctx context.Context, query string, page int,
 ) (*models.MangaListData, error) {
-	jsonResp := &models.MangaListData{}
+	log := slog.With("API", "GetData")
 
 	var url string
 	if query == "" {
@@ -18,7 +18,9 @@ func GetData(
 		url = createSearchURL(query, page)
 	}
 
+	jsonResp := &models.MangaListData{}
 	if err := ReqJSON(ctx, url, jsonResp); err != nil {
+		log.Error("Error receiving data", "Error", err)
 		return nil, err
 	}
 
@@ -28,8 +30,11 @@ func GetData(
 func GetMeta(
 	ctx context.Context, query string, page int,
 ) (*models.Meta, error) {
+	log := slog.With("API", "GetMeta")
+
 	jsonResp, err := GetData(ctx, query, page)
 	if err != nil {
+		log.Error("Error receiving meta", "Error", err)
 		return nil, err
 	}
 
@@ -39,8 +44,11 @@ func GetMeta(
 func GetPopularManga(
 	ctx context.Context, query string, page int,
 ) (models.MangaList, error) {
+	log := slog.With("API", "GetPopularManga")
+
 	jsonResp, err := GetData(ctx, query, page)
 	if err != nil {
+		log.Error("Error receiving popular manga", "Error", err)
 		return nil, err
 	}
 
@@ -50,8 +58,11 @@ func GetPopularManga(
 func GetSlugs(
 	ctx context.Context, query string, page int,
 ) ([]string, error) {
+	log := slog.With("API", "GetSlugs")
+
 	data, err := GetData(ctx, query, page)
 	if err != nil {
+		log.Error("Error receiving manga info", "Error", err)
 		return nil, err
 	}
 
@@ -66,10 +77,13 @@ func GetSlugs(
 func GetInfo(
 	ctx context.Context, slug string, branchID int,
 ) (*models.MangaInfo, error) {
+	log := slog.With("API", "GetInfo")
+
 	mangaInfo := &models.MangaInfoData{}
 	url := createInfoURL(slug, branchID)
 
 	if err := ReqJSON(ctx, url, mangaInfo); err != nil {
+		log.Error("Error receiving manga info", "Error", err)
 		return nil, err
 	}
 
@@ -80,10 +94,13 @@ func GetInfo(
 func GetMangaBranches(
 	ctx context.Context, id int,
 ) (models.BranchList, error) {
+	log := slog.With("API", "GetMangaBranches")
+
 	branches := &models.BranchesData{}
 	url := createBranchesURL(id)
 
 	if err := ReqJSON(ctx, url, branches); err != nil {
+		log.Error("Error receiving branches", "Error", err)
 		return nil, err
 	}
 
@@ -93,10 +110,13 @@ func GetMangaBranches(
 func GetChapters(
 	ctx context.Context, slug string, branchID int,
 ) (models.ChapterList, error) {
+	log := slog.With("API", "GetChapters")
+
 	chapters := &models.ChaptersData{}
 	url := createChaptersURL(slug)
 
 	if err := ReqJSON(ctx, url, chapters); err != nil {
+		log.Error("Error receiving chapters", "Error", err)
 		return nil, err
 	}
 
@@ -119,10 +139,13 @@ func GetChapters(
 func GetChaptersBranch(
 	ctx context.Context, slug string, branchID int,
 ) (models.ChapterList, error) {
+	log := slog.With("API", "GetChaptersBranch")
+
 	chapters := &models.ChaptersData{}
 	url := createChaptersURL(slug)
 
 	if err := ReqJSON(ctx, url, chapters); err != nil {
+		log.Error("Error receiving chapters", "Error", err)
 		return nil, err
 	}
 
@@ -141,10 +164,13 @@ func GetChaptersBranch(
 func GetChapter(
 	ctx context.Context, slug string, volume, number string, branchID int,
 ) (*models.Chapter, error) {
+	log := slog.With("API", "GetChapter")
+
 	chapter := &models.ChapterData{}
 	url := createChapterURL(slug, number, volume, branchID)
 
 	if err := ReqJSON(ctx, url, chapter); err != nil {
+		log.Error("Error receiving chapter", "Error", err)
 		return nil, err
 	}
 
@@ -152,11 +178,13 @@ func GetChapter(
 }
 
 func GetBranchTeams(ctx context.Context, branchID int) string {
+	log := slog.With("API", "GetBranchTeams")
+
 	branchTeams := make(map[int]string)
 	if branchID != 0 {
 		branches, err := GetMangaBranches(ctx, branchID)
 		if err != nil {
-			slog.Debug("Error receiving branches", "Error", err)
+			log.Error("Error receiving branches", "Error", err)
 		}
 
 		branchTeams = branches.BranchTeams()

@@ -60,6 +60,7 @@ func Init(logger *slog.Logger, cfg *services.Config) error {
 	log.Info("Starting application")
 	app := components.NewTViewApp(cfg, bookmarks, downloader)
 	if err := app.Start(); err != nil {
+		log.Error("Error occured while running application", "Error", err)
 		return err
 	}
 	defer app.Stop()

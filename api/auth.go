@@ -9,13 +9,15 @@ import (
 var authToken = ""
 
 func readAuthToken() string {
+	log := slog.With("API", "readAuthToken")
+
 	if authToken != "" {
 		return authToken
 	}
 
 	file, err := os.Open("auth_token")
 	if err != nil {
-		slog.Error("Error openning file", "Error", err)
+		log.Error("Error openning file", "Error", err)
 		return ""
 	}
 	defer file.Close()
@@ -26,7 +28,7 @@ func readAuthToken() string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		slog.Error("Error reading string", "Error", err)
+		log.Error("Error reading string", "Error", err)
 		return ""
 	}
 

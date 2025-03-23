@@ -72,7 +72,7 @@ func (p *ListPage) setListTable() {
 
 	data, err := api.GetData(ctx, p.app.query, p.app.page)
 	if err != nil {
-		slog.Error("Error receiving manga data", "Error", err)
+		slog.Error("Error receiving data", "Error", err)
 		return
 	}
 

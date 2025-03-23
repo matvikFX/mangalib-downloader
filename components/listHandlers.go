@@ -2,11 +2,10 @@ package components
 
 import (
 	"context"
-	"time"
-
 	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/models"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
