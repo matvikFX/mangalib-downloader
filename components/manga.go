@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+
 	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/downloader"
@@ -23,19 +24,17 @@ type MangaPage struct {
 }
 
 func (a *TViewApp) ShowMangaPage(ctx context.Context, slug string, branchID int) {
-	if a.selectedManga.Description == "" {
-		info, err := api.GetInfo(ctx, slug, branchID)
-		if err != nil {
-			slog.Error("Error receiving manga info", "Error", err)
-			return
-		}
-
-		if len(a.selectedManga.Branches) != 0 {
-			info.Branches = a.selectedManga.Branches
-		}
-
-		a.selectedManga = info
+	info, err := api.GetInfo(ctx, slug, branchID)
+	if err != nil {
+		slog.Error("Error receiving manga info", "Error", err)
+		return
 	}
+
+	if a.selectedManga != nil && len(a.selectedManga.Branches) != 0 {
+		info.Branches = a.selectedManga.Branches
+	}
+
+	a.selectedManga = info
 
 	mangaPage := newMangaPage(ctx, a)
 	a.App.SetFocus(mangaPage.grid)

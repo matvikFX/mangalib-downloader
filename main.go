@@ -3,12 +3,13 @@ package main
 import (
 	"log"
 	"log/slog"
-	"mangalib-downloader/components"
-	"mangalib-downloader/downloader"
-	"mangalib-downloader/services"
 	"os"
 	"path/filepath"
 	"time"
+
+	"mangalib-downloader/components"
+	"mangalib-downloader/downloader"
+	"mangalib-downloader/services"
 )
 
 func main() {
@@ -39,19 +40,19 @@ func main() {
 	logger := slog.New(fileHandler)
 	slog.SetDefault(logger)
 
-	if err := Init(logger, cfg); err != nil {
+	if err := Init(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func Init(logger *slog.Logger, cfg *services.Config) error {
+func Init(cfg *services.Config) error {
 	log := slog.With("App", "Init")
 
 	log.Info("Loading downloader")
 	downloader := downloader.New(cfg.DownloadPath, cfg.CbzFormat)
 
 	log.Info("Loading bookmarks")
-	bookmarks := services.NewBookmarks(logger)
+	bookmarks := services.NewBookmarks()
 	if err := bookmarks.Load(cfg.BookmarksPath); err != nil {
 		log.Error("Error loading bookmarks", "Error", err)
 		return err

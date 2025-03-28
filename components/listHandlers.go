@@ -2,10 +2,11 @@ package components
 
 import (
 	"context"
+	"time"
+
 	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
 	"mangalib-downloader/models"
-	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -42,6 +43,11 @@ func (p *ListPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
 	})
 
 	p.table.SetSelectedFunc(func(row, column int) {
+		manga := p.getMangaFromCell(row)
+		p.app.selectedManga = &models.MangaInfo{
+			Manga: *manga,
+		}
+
 		branches, err := api.GetMangaBranches(ctx, p.app.selectedManga.ID)
 		if err != nil {
 			return

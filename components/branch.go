@@ -32,7 +32,6 @@ func (a *TViewApp) newBranchForm(
 	form.SetTitle("Выбор ветки переводчиков").SetBorder(true)
 
 	dropDown := tview.NewDropDown().SetLabel(utils.BranchModalLabel)
-
 	for branch, team := range branches.BranchTeams() {
 		dropDown.AddOption(team, func() {
 			a.branchID = branch
@@ -45,6 +44,7 @@ func (a *TViewApp) newBranchForm(
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
+			a.query = ""
 			a.Pages.RemovePage(utils.BranchModalID)
 		case tcell.KeyEnter:
 			a.ShowMangaPage(ctx, slug, a.branchID)
