@@ -47,11 +47,15 @@ func (a *TViewApp) newBranchForm(
 			a.query = ""
 			a.Pages.RemovePage(utils.BranchModalID)
 		case tcell.KeyEnter:
-			a.ShowMangaPage(ctx, slug, a.branchID)
+			a.ShowMangaPage(ctx, slug)
 			a.Pages.RemovePage(utils.BranchModalID)
 		}
 		return event
 	})
 
 	return form
+}
+
+func (a *TViewApp) GetTeamsByID(branchList models.BranchList) string {
+	return branchList.BranchTeams()[a.branchID]
 }

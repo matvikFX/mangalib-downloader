@@ -2,27 +2,36 @@ package components
 
 import (
 	"context"
+	"log/slog"
+
+	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
 
 	"github.com/gdamore/tcell/v2"
 )
 
-func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) {
+func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc, slug string) {
 	select_change_row_color := func(row int) {
 		// Я не знаю почему только так работает выделение нескольких столбцов
 		// Пока оставлю так, если найду способ лучше, поменяю
 		cols := []int{0, 1, 1, 2, 2}
 		for _, col := range cols {
 			cell := p.table.GetCell(row, col)
-			if p.selected[row] {
+			if _, ok := p.selected[row]; ok {
 				cell.SetBackgroundColor(tcell.ColorBlack)
 				delete(p.selected, row)
 			} else {
 				cell.SetBackgroundColor(tcell.ColorRed)
-				p.selected[row] = true
+				p.selected[row] = struct{}{}
 			}
 			p.table.SetCell(row, col, cell)
 		}
+	}
+
+	manga, err := api.GetInfo(ctx, slug, p.app.branchID)
+	if err != nil {
+		slog.Error("Error receiving manga info", "Error", err)
+		return
 	}
 
 	p.grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -39,22 +48,21 @@ func (p *MangaPage) setHandlers(ctx context.Context, cancel context.CancelFunc) 
 			cancel()
 		case tcell.KeyCtrlD: // Скачивание выделенных
 			if len(p.selected) != 0 {
-				go p.downloadSelected(ctx, p.app.branchID)
+				go p.downloadSelected(ctx, manga)
 			}
 		case tcell.KeyCtrlA: // Скачивание всех глав
 			go func() {
-				p.app.downloader.DownloadManga(ctx, p.app.selectedManga, p.app.branchID)
+				p.app.downloader.DownloadManga(ctx, manga, p.app.branchID)
 
-				// <-p.app.downloader.Downloaded
 				p.app.ShowModal(utils.DownloadSuccessID,
-					"Манга '"+p.app.selectedManga.RusName+"' успешно скачана")
+					"Манга '"+manga.RusName+"' успешно скачана")
 
-				go p.setChapters(ctx)
+				go p.setChapters(ctx, manga, p.app.GetTeamsByID(manga.Branches))
 			}()
 		case tcell.KeyCtrlT: // Выбор ветки перевода
-			branches := p.app.selectedManga.Branches
-			slug := p.app.selectedManga.Slug
-			if len(p.app.selectedManga.Branches) > 0 {
+			branches := manga.Branches
+			slug := manga.Slug
+			if len(manga.Branches) > 0 {
 				p.app.ShowBranchModal(ctx, slug, branches)
 			} else {
 				p.app.ShowModal(utils.NoBranchesID,

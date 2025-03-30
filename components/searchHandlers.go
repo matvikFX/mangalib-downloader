@@ -41,10 +41,9 @@ func (p *SearchModal) setHandlers(ctx context.Context) {
 					"slug", slug,
 				)
 
-				p.app.selectedManga = nil
 				p.app.Pages.RemovePage(utils.SearchModalID)
 				if len(branches) == 0 {
-					p.app.ShowMangaPage(ctx, slug, 0)
+					p.app.ShowMangaPage(ctx, slug)
 				} else {
 					p.app.ShowBranchModal(ctx, slug, branches)
 				}
