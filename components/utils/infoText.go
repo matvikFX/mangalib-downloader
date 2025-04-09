@@ -35,15 +35,9 @@ func InfoText(manga *models.MangaInfo, teamList []string) string {
 	gs := manga.GetGenres()
 	genres := strings.Join(gs, ", ")
 
-	var teams string
-	if len(teamList) == 0 {
-		for _, team := range manga.Teams {
-			teams += fmt.Sprintln(team.Name)
-		}
-	} else {
-		for _, team := range teamList {
-			teams += fmt.Sprintln(team)
-		}
+	teams := strings.Join(teamList, "\n")
+	if len(teams) == 0 {
+		teams = strings.Join(manga.Teams.GetNames(), "\n")
 	}
 
 	var authors string

@@ -32,6 +32,14 @@ type BranchesData struct {
 	Data BranchList `json:"data"`
 }
 
+func (t TeamList) GetNames() []string {
+	teams := make([]string, len(t))
+	for i, team := range t {
+		teams[i] = team.Name
+	}
+	return teams
+}
+
 func (b BranchList) GetTeams() []string {
 	teams := make([]string, len(b))
 	for i, branch := range b {

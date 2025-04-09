@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"log/slog"
+
 	"mangalib-downloader/models"
 )
 
@@ -92,12 +93,13 @@ func GetInfo(
 }
 
 func GetMangaBranches(
-	ctx context.Context, id int,
+	ctx context.Context, mangaID int,
 ) (models.BranchList, error) {
 	log := slog.With("API", "GetMangaBranches")
 
 	branches := &models.BranchesData{}
-	url := createBranchesURL(id)
+	url := createBranchesURL(mangaID)
+	log.Debug("Branches URL", "URL", url)
 
 	if err := ReqJSON(ctx, url, branches); err != nil {
 		log.Error("Error receiving branches", "Error", err)
@@ -180,15 +182,11 @@ func GetChapter(
 func GetBranchTeams(ctx context.Context, branchID int) string {
 	log := slog.With("API", "GetBranchTeams")
 
-	branchTeams := make(map[int]string)
-	if branchID != 0 {
-		branches, err := GetMangaBranches(ctx, branchID)
-		if err != nil {
-			log.Error("Error receiving branches", "Error", err)
-		}
-
-		branchTeams = branches.BranchTeams()
+	branches, err := GetMangaBranches(ctx, branchID)
+	if err != nil {
+		log.Error("Error receiving branches", "Error", err)
 	}
 
+	branchTeams := branches.BranchTeams()
 	return branchTeams[branchID]
 }

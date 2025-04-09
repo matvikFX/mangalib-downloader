@@ -2,8 +2,8 @@ package components
 
 import (
 	"log/slog"
+
 	"mangalib-downloader/downloader"
-	"mangalib-downloader/models"
 	"mangalib-downloader/services"
 
 	"github.com/rivo/tview"
@@ -18,10 +18,11 @@ type TViewApp struct {
 
 	downloader *downloader.Downloader
 
-	query         string
-	page          int
-	branchID      int
-	selectedManga *models.MangaInfo
+	query    string
+	page     int
+	branchID int
+
+	selectedBookmarkFolder string
 }
 
 func NewTViewApp(

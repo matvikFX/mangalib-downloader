@@ -3,9 +3,10 @@ package components
 import (
 	"context"
 	"log/slog"
+	"strings"
+
 	"mangalib-downloader/api"
 	"mangalib-downloader/components/utils"
-	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -35,10 +36,14 @@ func (p *SearchModal) setHandlers(ctx context.Context) {
 					"length", len(branches),
 					"branches", branches.GetTeams(),
 				)
+				log.Debug("Manga",
+					"id", id,
+					"slug", slug,
+				)
 
 				p.app.Pages.RemovePage(utils.SearchModalID)
 				if len(branches) == 0 {
-					p.app.ShowMangaPage(ctx, slug, 0)
+					p.app.ShowMangaPage(ctx, slug)
 				} else {
 					p.app.ShowBranchModal(ctx, slug, branches)
 				}
