@@ -25,18 +25,6 @@ type MangaPage struct {
 }
 
 func (a *TViewApp) ShowMangaPage(ctx context.Context, slug string) {
-	// info, err := api.GetInfo(ctx, slug, branchID)
-	// if err != nil {
-	// 	slog.Error("Error receiving manga info", "Error", err)
-	// 	return
-	// }
-
-	// if a.selectedManga != nil && len(a.selectedManga.Branches) != 0 {
-	// 	info.Branches = a.selectedManga.Branches
-	// }
-	//
-	// a.selectedManga = info
-
 	mangaPage, err := newMangaPage(ctx, a, slug)
 	if err != nil {
 		// Show modal
@@ -124,9 +112,7 @@ func newInfoTable() *tview.Table {
 }
 
 func (p *MangaPage) setMangaInfo(manga *models.MangaInfo, teams []string) {
-	// teams := manga.Branches.BranchTeamList()
 	info := utils.InfoText(manga, teams)
-
 	p.app.App.QueueUpdateDraw(func() {
 		p.textView.SetText(info)
 	})

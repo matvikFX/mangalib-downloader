@@ -49,7 +49,7 @@ func Init(cfg *services.Config) error {
 	log := slog.With("App", "Init")
 
 	log.Info("Loading downloader")
-	downloader := downloader.New(cfg.DownloadPath, cfg.CbzFormat)
+	d := downloader.New(cfg.DownloadPath, cfg.CbzFormat)
 
 	log.Info("Loading bookmarks")
 	bookmarks := services.NewBookmarks()
@@ -59,9 +59,9 @@ func Init(cfg *services.Config) error {
 	}
 
 	log.Info("Starting application")
-	app := components.NewTViewApp(cfg, bookmarks, downloader)
+	app := components.NewTViewApp(cfg, bookmarks, d)
 	if err := app.Start(); err != nil {
-		log.Error("Error occured while running application", "Error", err)
+		log.Error("Error occurred while running application", "Error", err)
 		return err
 	}
 	defer app.Stop()
